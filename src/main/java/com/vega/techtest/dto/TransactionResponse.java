@@ -25,7 +25,6 @@ public class TransactionResponse {
     private String status;
     private List<TransactionItemResponse> items;
 
-    // Constructors
     public TransactionResponse() {
     }
 
@@ -44,7 +43,6 @@ public class TransactionResponse {
         this.createdAt = ZonedDateTime.now();
     }
 
-    // Getters and Setters
     public String getTransactionId() {
         return transactionId;
     }
@@ -132,4 +130,4 @@ public class TransactionResponse {
     public void setItems(List<TransactionItemResponse> items) {
         this.items = items;
     }
-} 
+}

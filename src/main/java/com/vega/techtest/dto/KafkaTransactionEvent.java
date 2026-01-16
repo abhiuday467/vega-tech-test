@@ -5,9 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 /**
- * Kafka transaction event message format
- * This represents the event envelope that wraps transaction data
- * The data field is a generic Map to allow candidates to parse it themselves
+ * Kafka transaction event message format.
+ * The data field is a generic Map to allow candidates to parse it themselves.
  */
 public class KafkaTransactionEvent {
 
@@ -29,7 +28,6 @@ public class KafkaTransactionEvent {
     @JsonProperty("data")
     private Map<String, Object> data;
 
-    // Default constructor for Jackson
     public KafkaTransactionEvent() {
     }
 
@@ -43,7 +41,6 @@ public class KafkaTransactionEvent {
         this.data = data;
     }
 
-    // Getters and Setters
     public String getEventId() {
         return eventId;
     }
@@ -103,4 +100,4 @@ public class KafkaTransactionEvent {
                 ", data=" + data +
                 '}';
     }
-} 
+}

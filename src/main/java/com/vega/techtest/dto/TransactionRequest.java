@@ -20,7 +20,6 @@ public class TransactionRequest {
 
     private List<TransactionItemRequest> items;
 
-    // Constructors
     public TransactionRequest() {
     }
 
@@ -35,7 +34,6 @@ public class TransactionRequest {
         this.timestamp = ZonedDateTime.now();
     }
 
-    // Getters and Setters
     public String getTransactionId() {
         return transactionId;
     }
@@ -107,4 +105,4 @@ public class TransactionRequest {
     public void setItems(List<TransactionItemRequest> items) {
         this.items = items;
     }
-} 
+}

@@ -47,7 +47,6 @@ public class TransactionEntity {
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TransactionItemEntity> items;
 
-    // Constructors
     public TransactionEntity() {
         this.createdAt = ZonedDateTime.now();
     }
@@ -64,7 +63,6 @@ public class TransactionEntity {
         this.transactionTimestamp = ZonedDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -160,4 +158,4 @@ public class TransactionEntity {
     public void setItems(List<TransactionItemEntity> items) {
         this.items = items;
     }
-} 
+}

@@ -11,7 +11,6 @@ public class TransactionItemResponse {
     private BigDecimal totalPrice;
     private String category;
 
-    // Constructors
     public TransactionItemResponse() {
     }
 
@@ -31,7 +30,6 @@ public class TransactionItemResponse {
         this.category = category;
     }
 
-    // Getters and Setters
     public String getProductName() {
         return productName;
     }
@@ -79,4 +77,4 @@ public class TransactionItemResponse {
     public void setCategory(String category) {
         this.category = category;
     }
-} 
+}

@@ -13,52 +13,24 @@ import java.util.Optional;
 @Repository
 public interface TransactionRepository extends JpaRepository<TransactionEntity, Long> {
 
-    /**
-     * Find transaction by transaction ID
-     */
     Optional<TransactionEntity> findByTransactionId(String transactionId);
 
-    /**
-     * Find all transactions for a specific store
-     */
     List<TransactionEntity> findByStoreIdOrderByTransactionTimestampDesc(String storeId);
 
-    /**
-     * Find all transactions for a specific customer
-     */
     List<TransactionEntity> findByCustomerIdOrderByTransactionTimestampDesc(String customerId);
 
-    /**
-     * Find all transactions for a specific till
-     */
     List<TransactionEntity> findByTillIdOrderByTransactionTimestampDesc(String tillId);
 
-    /**
-     * Find transactions within a date range
-     */
     @Query("SELECT t FROM TransactionEntity t WHERE t.transactionTimestamp BETWEEN :startDate AND :endDate ORDER BY t.transactionTimestamp DESC")
     List<TransactionEntity> findTransactionsByDateRange(@Param("startDate") ZonedDateTime startDate,
                                                         @Param("endDate") ZonedDateTime endDate);
 
-    /**
-     * Find transactions by payment method
-     */
-    List<TransactionEntity> findByPaymentMethodOrderByTransactionTimestampDesc(String paymentMethod);
-
-    /**
-     * Count transactions by store
-     */
-    @Query("SELECT t.storeId, COUNT(t) FROM TransactionEntity t GROUP BY t.storeId")
-    List<Object[]> countTransactionsByStore();
-
-    /**
-     * Get total sales amount by store
-     */
     @Query("SELECT t.storeId, SUM(t.totalAmount) FROM TransactionEntity t GROUP BY t.storeId")
     List<Object[]> getTotalSalesByStore();
 
-    /**
-     * Check if transaction ID already exists
-     */
+    //TODO Remove any index for findByPaymentMethodOrderByTransactionTimestampDesc and the composite indexing to improve the performance
+    //TODO Remove any index for countTransactionsByStore
+    //TODO Remove any index for getTotalSalesByStore
+
     boolean existsByTransactionId(String transactionId);
-} 
+}
