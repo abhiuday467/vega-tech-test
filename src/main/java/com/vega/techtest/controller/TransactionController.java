@@ -37,16 +37,13 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final MeterRegistry meterRegistry;
 
-    // Counters
     private final Counter transactionSubmissionCounter;
     private final Counter transactionRetrievalCounter;
     private final Counter transactionErrorCounter;
 
-    // Timers
     private final Timer transactionSubmissionTimer;
     private final Timer transactionRetrievalTimer;
 
-    // Distribution summaries
     private final DistributionSummary transactionAmountSummary;
     private final DistributionSummary transactionItemCountSummary;
 
@@ -56,7 +53,6 @@ public class TransactionController {
         this.transactionService = transactionService;
         this.meterRegistry = meterRegistry;
 
-        // Initialize counters
         this.transactionSubmissionCounter = Counter.builder("transaction_submissions_total")
                 .description("Total number of transaction submissions via REST API")
                 .register(meterRegistry);
@@ -67,7 +63,6 @@ public class TransactionController {
                 .description("Total number of transaction processing errors")
                 .register(meterRegistry);
 
-        // Initialize timers
         this.transactionSubmissionTimer = Timer.builder("transaction_submission_duration")
                 .description("Time taken to process transaction submissions")
                 .register(meterRegistry);
@@ -75,7 +70,6 @@ public class TransactionController {
                 .description("Time taken to retrieve transactions")
                 .register(meterRegistry);
 
-        // Initialize distribution summaries
         this.transactionAmountSummary = DistributionSummary.builder("transaction_amount")
                 .description("Distribution of transaction amounts")
                 .baseUnit("GBP")
@@ -99,15 +93,12 @@ public class TransactionController {
 
             TransactionResponse response = transactionService.processTransaction(request);
 
-            // Record metrics
             transactionSubmissionCounter.increment();
             sample.stop(transactionSubmissionTimer);
 
-            // Record transaction amount and item count
             transactionAmountSummary.record(response.getTotalAmount().doubleValue());
             transactionItemCountSummary.record(response.getItems().size());
 
-            // Record tagged metrics for store and till
             Counter.builder("transaction_submissions_by_store")
                     .tag("store_id", request.getStoreId())
                     .description("Transaction submissions by store")
@@ -158,9 +149,6 @@ public class TransactionController {
         }
     }
 
-    /**
-     * Get transaction by ID
-     */
     @GetMapping("/{transactionId}")
     public ResponseEntity<Object> getTransaction(@PathVariable String transactionId) {
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -188,9 +176,6 @@ public class TransactionController {
         }
     }
 
-    /**
-     * Get transactions by store
-     */
     @GetMapping("/store/{storeId}")
     public ResponseEntity<Object> getTransactionsByStore(@PathVariable String storeId) {
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -218,9 +203,6 @@ public class TransactionController {
         }
     }
 
-    /**
-     * Get transactions by customer
-     */
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<Object> getTransactionsByCustomer(@PathVariable String customerId) {
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -248,9 +230,6 @@ public class TransactionController {
         }
     }
 
-    /**
-     * Get transactions by till
-     */
     @GetMapping("/till/{tillId}")
     public ResponseEntity<Object> getTransactionsByTill(@PathVariable String tillId) {
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -278,9 +257,6 @@ public class TransactionController {
         }
     }
 
-    /**
-     * Get transactions by date range
-     */
     @GetMapping("/date-range")
     public ResponseEntity<Object> getTransactionsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
@@ -311,15 +287,11 @@ public class TransactionController {
         }
     }
 
-    /**
-     * Create sample transactions for testing (matches user report scenario)
-     */
     @PostMapping("/sample")
     public ResponseEntity<Map<String, Object>> createSampleTransaction() {
         Timer.Sample sample = Timer.start(meterRegistry);
 
         try {
-            // Create a sample supermarket transaction
             TransactionRequest request = new TransactionRequest();
             request.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
             request.setCustomerId("CUST-" + (int) (Math.random() * 99999));
@@ -330,7 +302,6 @@ public class TransactionController {
             request.setCurrency("GBP");
             request.setTimestamp(ZonedDateTime.now());
 
-            // Add sample items
             request.setItems(List.of(
                     new com.vega.techtest.dto.TransactionItemRequest("Milk", "MILK001", new java.math.BigDecimal("2.50"), 1, "Dairy"),
                     new com.vega.techtest.dto.TransactionItemRequest("Bread", "BREAD001", new java.math.BigDecimal("1.20"), 1, "Bakery"),
@@ -341,7 +312,6 @@ public class TransactionController {
             transactionSubmissionCounter.increment();
             sample.stop(transactionSubmissionTimer);
 
-            // Record metrics for sample transaction
             transactionAmountSummary.record(response.getTotalAmount().doubleValue());
             transactionItemCountSummary.record(response.getItems().size());
 
@@ -366,10 +336,6 @@ public class TransactionController {
         }
     }
 
-
-    /**
-     * Health check endpoint
-     */
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(
@@ -379,9 +345,6 @@ public class TransactionController {
         ));
     }
 
-    /**
-     * Get transaction statistics for a store
-     */
     @GetMapping("/stats/{storeId}")
     public ResponseEntity<Map<String, Object>> getTransactionStats(@PathVariable String storeId) {
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -402,7 +365,6 @@ public class TransactionController {
                 ));
             }
 
-            // Calculate statistics
             int totalTransactions = transactions.size();
             BigDecimal totalAmount = transactions.stream()
                     .map(TransactionResponse::getTotalAmount)
@@ -436,4 +398,4 @@ public class TransactionController {
             ));
         }
     }
-} 
+}

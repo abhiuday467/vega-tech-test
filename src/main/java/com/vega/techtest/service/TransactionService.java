@@ -32,34 +32,26 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
-    /**
-     * Process and save a new transaction from the legacy REST API
-     */
     @Transactional
     public TransactionResponse processTransaction(TransactionRequest request) {
         logger.info("Processing transaction request: {}", request.getTransactionId());
 
-        // Generate transaction ID if not provided
         String transactionId = request.getTransactionId();
         if (transactionId == null || transactionId.trim().isEmpty()) {
             transactionId = generateTransactionId();
             request.setTransactionId(transactionId);
         }
 
-        // Check for duplicate transaction ID
         if (transactionRepository.existsByTransactionId(transactionId)) {
             throw new IllegalArgumentException("Transaction ID already exists: " + transactionId);
         }
 
-        // Set timestamp if not provided
         if (request.getTimestamp() == null) {
             request.setTimestamp(ZonedDateTime.now());
         }
 
-        // Validate request
         validateTransactionRequest(request);
 
-        // Create transaction entity
         TransactionEntity transaction = new TransactionEntity(
                 transactionId,
                 request.getCustomerId(),
@@ -72,7 +64,6 @@ public class TransactionService {
         transaction.setCurrency(request.getCurrency());
         transaction.setTransactionTimestamp(request.getTimestamp());
 
-        // Create transaction items if provided
         if (request.getItems() != null && !request.getItems().isEmpty()) {
             List<TransactionItemEntity> items = request.getItems().stream()
                     .map(itemRequest -> new TransactionItemEntity(
@@ -88,24 +79,17 @@ public class TransactionService {
             transaction.setItems(items);
         }
 
-        // Save transaction
         TransactionEntity savedTransaction = transactionRepository.save(transaction);
         logger.info("Successfully saved transaction: {}", transactionId);
 
         return convertToResponse(savedTransaction);
     }
 
-    /**
-     * Get transaction by ID
-     */
     public Optional<TransactionResponse> getTransactionById(String transactionId) {
         return transactionRepository.findByTransactionId(transactionId)
                 .map(this::convertToResponse);
     }
 
-    /**
-     * Get all transactions for a store
-     */
     public List<TransactionResponse> getTransactionsByStore(String storeId) {
         return transactionRepository.findByStoreIdOrderByTransactionTimestampDesc(storeId)
                 .stream()
@@ -113,9 +97,6 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get all transactions for a customer
-     */
     public List<TransactionResponse> getTransactionsByCustomer(String customerId) {
         return transactionRepository.findByCustomerIdOrderByTransactionTimestampDesc(customerId)
                 .stream()
@@ -123,9 +104,6 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get all transactions for a till
-     */
     public List<TransactionResponse> getTransactionsByTill(String tillId) {
         return transactionRepository.findByTillIdOrderByTransactionTimestampDesc(tillId)
                 .stream()
@@ -133,9 +111,6 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get transactions within a date range
-     */
     public List<TransactionResponse> getTransactionsByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
         return transactionRepository.findTransactionsByDateRange(startDate, endDate)
                 .stream()
@@ -143,16 +118,10 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Generate a unique transaction ID
-     */
     private String generateTransactionId() {
         return "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    /**
-     * Validate transaction request
-     */
     private void validateTransactionRequest(TransactionRequest request) {
         if (request.getStoreId() == null || request.getStoreId().trim().isEmpty()) {
             throw new IllegalArgumentException("Store ID is required");
@@ -166,7 +135,6 @@ public class TransactionService {
             throw new IllegalArgumentException("Total amount must be greater than zero");
         }
 
-        // Validate items if provided
         if (request.getItems() != null) {
             BigDecimal calculatedTotal = request.getItems().stream()
                     .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -179,9 +147,6 @@ public class TransactionService {
         }
     }
 
-    /**
-     * Convert entity to response DTO
-     */
     private TransactionResponse convertToResponse(TransactionEntity entity) {
         TransactionResponse response = new TransactionResponse(
                 entity.getTransactionId(),
@@ -197,7 +162,6 @@ public class TransactionService {
 
         response.setCreatedAt(entity.getCreatedAt());
 
-        // Convert items if present
         if (entity.getItems() != null && !entity.getItems().isEmpty()) {
             List<TransactionItemResponse> itemResponses = entity.getItems().stream()
                     .map(item -> new TransactionItemResponse(
@@ -215,4 +179,4 @@ public class TransactionService {
 
         return response;
     }
-} 
+}

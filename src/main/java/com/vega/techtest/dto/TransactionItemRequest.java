@@ -10,7 +10,6 @@ public class TransactionItemRequest {
     private Integer quantity;
     private String category;
 
-    // Constructors
     public TransactionItemRequest() {
     }
 
@@ -28,7 +27,6 @@ public class TransactionItemRequest {
         this.category = category;
     }
 
-    // Getters and Setters
     public String getProductName() {
         return productName;
     }
@@ -68,4 +66,4 @@ public class TransactionItemRequest {
     public void setCategory(String category) {
         this.category = category;
     }
-} 
+}
