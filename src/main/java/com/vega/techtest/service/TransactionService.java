@@ -202,19 +202,8 @@ public class TransactionService {
     }
 
     private void validateTransactionRequest(TransactionRequest request) {
-        if (request.getStoreId() == null || request.getStoreId().trim().isEmpty()) {
-            throw new IllegalArgumentException("Store ID is required");
-        }
-
-        if (request.getPaymentMethod() == null || request.getPaymentMethod().trim().isEmpty()) {
-            throw new IllegalArgumentException("Payment method is required");
-        }
-
-        if (request.getTotalAmount() == null || request.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Total amount must be greater than zero");
-        }
-
-        if (request.getItems() != null) {
+        // Complex business validation - calculate total matches provided total
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
             BigDecimal calculatedTotal = request.getItems().stream()
                     .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);

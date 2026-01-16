@@ -8,6 +8,7 @@ import com.vega.techtest.service.TransactionService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.DistributionSummary;
+import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,7 @@ public class TransactionController {
 
     @Timed("transaction_submission_duration")
     @PostMapping("/submit")
-    public ResponseEntity<Map<String, Object>> submitTransaction(@RequestBody TransactionRequest request) {
+    public ResponseEntity<Map<String, Object>> submitTransaction(@Valid @RequestBody TransactionRequest request) {
         logger.info("Received transaction submission from till: {}", request.getTillId());
 
         TransactionResponse response = transactionService.processTransaction(request);

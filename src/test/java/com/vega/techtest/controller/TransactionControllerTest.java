@@ -111,12 +111,13 @@ class TransactionControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 400 and increment error counter on IllegalArgumentException")
-        void submitTransaction_invalidRequest() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
-                    .thenThrow(new IllegalArgumentException("Store ID is required"));
+        @DisplayName("Should return 400 with field errors when bean validation fails")
+        void submitTransaction_validationFailure() throws Exception {
+            TransactionRequest request = new TransactionRequest();
+            request.setCustomerId("CUST-001");
+            // Missing storeId (required)
+            // Missing paymentMethod (required)
+            // Missing totalAmount (required)
 
             double errorCounterBefore = getCounterValue("transaction_errors_total");
 
@@ -126,7 +127,158 @@ class TransactionControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.status").value("error"))
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
-                    .andExpect(jsonPath("$.error").value("Store ID is required"));
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.storeId").value("Store ID is required"))
+                    .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"))
+                    .andExpect(jsonPath("$.errors.totalAmount").value("Total amount is required"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when totalAmount is zero")
+        void submitTransaction_zeroAmount() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setTotalAmount(new BigDecimal("0.00"));
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.totalAmount").value("Total amount must be greater than zero"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when totalAmount is negative")
+        void submitTransaction_negativeAmount() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setTotalAmount(new BigDecimal("-10.00"));
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.totalAmount").value("Total amount must be greater than zero"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when storeId is blank")
+        void submitTransaction_blankStoreId() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setStoreId("");
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.storeId").value("Store ID is required"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when paymentMethod is blank")
+        void submitTransaction_blankPaymentMethod() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setPaymentMethod("   ");
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when storeId is missing")
+        void submitTransaction_missingStoreId() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setStoreId(null);
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.storeId").value("Store ID is required"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when paymentMethod is missing")
+        void submitTransaction_missingPaymentMethod() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setPaymentMethod(null);
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.errors").isMap())
+                    .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return 400 and increment error counter on IllegalArgumentException")
+        void submitTransaction_invalidRequest() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+
+            when(transactionService.processTransaction(any(TransactionRequest.class)))
+                    .thenThrow(new IllegalArgumentException("Transaction ID already exists: TXN-001"));
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Invalid transaction data"))
+                    .andExpect(jsonPath("$.error").value("Transaction ID already exists: TXN-001"));
 
             double errorCounterAfter = getCounterValue("transaction_errors_total");
             assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);

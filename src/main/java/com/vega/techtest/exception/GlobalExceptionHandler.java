@@ -6,12 +6,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,6 +29,27 @@ public class GlobalExceptionHandler {
         this.transactionErrorCounter = Counter.builder("transaction_errors_total")
                 .description("Total number of transaction processing errors")
                 .register(meterRegistry);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value",
+                        (existing, replacement) -> existing
+                ));
+
+        logger.warn("Validation failed for fields: {}", fieldErrors);
+        transactionErrorCounter.increment();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "Invalid transaction data");
+        response.put("errors", fieldErrors);
+
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
