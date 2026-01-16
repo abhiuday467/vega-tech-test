@@ -3,6 +3,7 @@ package com.vega.techtest.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,7 @@ class TransactionServiceTest {
         request.setPaymentMethod("card");
         request.setTotalAmount(new BigDecimal("12.50"));
 
-        when(transactionRepository.existsByTransactionId(any())).thenReturn(false);
+        when(transactionRepository.findByTransactionId(any())).thenReturn(Optional.empty());
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -58,13 +60,13 @@ class TransactionServiceTest {
         assertThat(response.getCurrency()).isEqualTo("GBP");
 
         ArgumentCaptor<String> idCaptor = ArgumentCaptor.forClass(String.class);
-        verify(transactionRepository).existsByTransactionId(idCaptor.capture());
+        verify(transactionRepository).findByTransactionId(idCaptor.capture());
         assertThat(idCaptor.getValue()).isEqualTo(response.getTransactionId());
     }
 
     @Test
-    @DisplayName("Should reject duplicate transaction id")
-    void processTransaction_rejectsDuplicateId() {
+    @DisplayName("Should return existing transaction for duplicate id (idempotent)")
+    void processTransaction_returnsExistingForDuplicateId() {
         TransactionRequest request = new TransactionRequest();
         request.setTransactionId("TXN-EXIST");
         request.setStoreId("STORE-1");
@@ -72,9 +74,27 @@ class TransactionServiceTest {
         request.setPaymentMethod("cash");
         request.setTotalAmount(new BigDecimal("9.99"));
 
-        when(transactionRepository.existsByTransactionId("TXN-EXIST")).thenReturn(true);
+        TransactionEntity existingEntity = new TransactionEntity(
+                "TXN-EXIST",
+                "CUST-1",
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                new BigDecimal("9.99")
+        );
+        existingEntity.setCurrency("GBP");
+        existingEntity.setTransactionTimestamp(ZonedDateTime.now());
 
-        assertThrows(IllegalArgumentException.class, () -> transactionService.processTransaction(request));
+        when(transactionRepository.findByTransactionId("TXN-EXIST")).thenReturn(Optional.of(existingEntity));
+
+        TransactionResponse response = transactionService.processTransaction(request);
+
+        assertThat(response.getTransactionId()).isEqualTo("TXN-EXIST");
+        assertThat(response.getStoreId()).isEqualTo("STORE-1");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
+
+        verify(transactionRepository).findByTransactionId("TXN-EXIST");
+        verify(transactionRepository, never()).save(any(TransactionEntity.class));
     }
 
     @Nested

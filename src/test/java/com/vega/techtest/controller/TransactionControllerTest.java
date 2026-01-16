@@ -268,7 +268,7 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
 
             when(transactionService.processTransaction(any(TransactionRequest.class)))
-                    .thenThrow(new IllegalArgumentException("Transaction ID already exists: TXN-001"));
+                    .thenThrow(new IllegalArgumentException("Invalid transaction data"));
 
             double errorCounterBefore = getCounterValue("transaction_errors_total");
 
@@ -278,10 +278,45 @@ class TransactionControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.status").value("error"))
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
-                    .andExpect(jsonPath("$.error").value("Transaction ID already exists: TXN-001"));
+                    .andExpect(jsonPath("$.error").value("Invalid transaction data"));
 
             double errorCounterAfter = getCounterValue("transaction_errors_total");
             assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+        }
+
+        @Test
+        @DisplayName("Should return same transaction for duplicate submission (idempotent)")
+        void submitTransaction_idempotentBehavior() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+            request.setTransactionId("TXN-001");
+
+            TransactionResponse response = createTransactionResponse("TXN-001");
+
+            when(transactionService.processTransaction(any(TransactionRequest.class)))
+                    .thenReturn(response);
+
+            double counterBefore = getCounterValue("transaction_submissions_total");
+
+            // First submission
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("success"))
+                    .andExpect(jsonPath("$.transactionId").value("TXN-001"));
+
+            // Second submission with same ID (idempotent)
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("success"))
+                    .andExpect(jsonPath("$.transactionId").value("TXN-001"));
+
+            double counterAfter = getCounterValue("transaction_submissions_total");
+            assertThat(counterAfter).isEqualTo(counterBefore + 2);
+
+            verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
         }
 
         @Test

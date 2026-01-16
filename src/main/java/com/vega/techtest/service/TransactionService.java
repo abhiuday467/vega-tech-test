@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -49,8 +50,11 @@ public class TransactionService {
                 request.setTransactionId(transactionId);
             }
 
-            if (transactionRepository.existsByTransactionId(transactionId)) {
-                throw new IllegalArgumentException("Transaction ID already exists: " + transactionId);
+            // Check if transaction already exists (idempotency)
+            Optional<TransactionEntity> existingTransaction = transactionRepository.findByTransactionId(transactionId);
+            if (existingTransaction.isPresent()) {
+                logger.info("Transaction {} already exists, returning existing transaction", transactionId);
+                return convertToResponse(existingTransaction.get());
             }
 
             if (request.getTimestamp() == null) {
