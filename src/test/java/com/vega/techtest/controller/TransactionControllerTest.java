@@ -1,11 +1,17 @@
 package com.vega.techtest.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vega.techtest.aspect.TimingAspect;
 import com.vega.techtest.dto.TransactionItemRequest;
 import com.vega.techtest.dto.TransactionItemResponse;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
+import com.vega.techtest.exception.GlobalExceptionHandler;
+import com.vega.techtest.exception.StatisticsCalculationException;
+import com.vega.techtest.exception.TransactionProcessingException;
+import com.vega.techtest.exception.TransactionRetrievalException;
 import com.vega.techtest.service.TransactionService;
+import com.vega.techtest.exception.ResourceNotFoundException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -19,6 +25,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,7 +35,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -39,7 +45,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TransactionController.class)
-@Import(TransactionControllerTest.MeterRegistryTestConfig.class)
+@EnableAspectJAutoProxy
+@Import({
+    TransactionControllerTest.MeterRegistryTestConfig.class,
+    GlobalExceptionHandler.class,
+    TimingAspect.class
+})
 class TransactionControllerTest {
 
     @Autowired
@@ -126,7 +137,7 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
 
             when(transactionService.processTransaction(any(TransactionRequest.class)))
-                    .thenThrow(new RuntimeException("Database connection failed"));
+                    .thenThrow(new TransactionProcessingException("Failed to process transaction"));
 
             double errorCounterBefore = getCounterValue("transaction_errors_total");
 
@@ -187,7 +198,7 @@ class TransactionControllerTest {
             TransactionResponse response = createTransactionResponse("TXN-001");
 
             when(transactionService.getTransactionById("TXN-001"))
-                    .thenReturn(Optional.of(response));
+                    .thenReturn(response);
 
             mockMvc.perform(get("/api/transactions/TXN-001"))
                     .andExpect(status().isOk())
@@ -202,7 +213,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 404 when transaction not found")
         void getTransaction_notFound() throws Exception {
             when(transactionService.getTransactionById("TXN-999"))
-                    .thenReturn(Optional.empty());
+                    .thenThrow(new ResourceNotFoundException("Transaction not found: TXN-999"));
 
             mockMvc.perform(get("/api/transactions/TXN-999"))
                     .andExpect(status().isNotFound());
@@ -214,7 +225,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 500 on service exception")
         void getTransaction_serviceError() throws Exception {
             when(transactionService.getTransactionById("TXN-001"))
-                    .thenThrow(new RuntimeException("Database error"));
+                    .thenThrow(new TransactionRetrievalException("Failed to retrieve transaction"));
 
             mockMvc.perform(get("/api/transactions/TXN-001"))
                     .andExpect(status().isInternalServerError())
@@ -254,7 +265,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 500 on service exception")
         void getTransactionsByStore_serviceError() throws Exception {
             when(transactionService.getTransactionsByStore("STORE-001"))
-                    .thenThrow(new RuntimeException("Database error"));
+                    .thenThrow(new TransactionRetrievalException("Failed to retrieve transactions"));
 
             mockMvc.perform(get("/api/transactions/store/STORE-001"))
                     .andExpect(status().isInternalServerError())
@@ -292,7 +303,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 500 on service exception")
         void getTransactionsByCustomer_serviceError() throws Exception {
             when(transactionService.getTransactionsByCustomer("CUST-001"))
-                    .thenThrow(new RuntimeException("Database error"));
+                    .thenThrow(new TransactionRetrievalException("Failed to retrieve transactions"));
 
             mockMvc.perform(get("/api/transactions/customer/CUST-001"))
                     .andExpect(status().isInternalServerError())
@@ -330,7 +341,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 500 on service exception")
         void getTransactionsByTill_serviceError() throws Exception {
             when(transactionService.getTransactionsByTill("TILL-001"))
-                    .thenThrow(new RuntimeException("Database error"));
+                    .thenThrow(new TransactionRetrievalException("Failed to retrieve transactions"));
 
             mockMvc.perform(get("/api/transactions/till/TILL-001"))
                     .andExpect(status().isInternalServerError())
@@ -380,7 +391,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 500 on service exception")
         void getTransactionsByDateRange_serviceError() throws Exception {
             when(transactionService.getTransactionsByDateRange(any(ZonedDateTime.class), any(ZonedDateTime.class)))
-                    .thenThrow(new RuntimeException("Database error"));
+                    .thenThrow(new TransactionRetrievalException("Failed to retrieve transactions"));
 
             mockMvc.perform(get("/api/transactions/date-range")
                             .param("startDate", "2024-01-01T00:00:00Z")
@@ -418,7 +429,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 500 on service exception")
         void createSampleTransaction_serviceError() throws Exception {
             when(transactionService.processTransaction(any(TransactionRequest.class)))
-                    .thenThrow(new RuntimeException("Database error"));
+                    .thenThrow(new TransactionProcessingException("Failed to create sample transaction"));
 
             mockMvc.perform(post("/api/transactions/sample"))
                     .andExpect(status().isInternalServerError())
@@ -455,7 +466,7 @@ class TransactionControllerTest {
                     createTransactionResponseWithAmount("TXN-002", new BigDecimal("200.00"))
             );
 
-            when(transactionService.getTransactionsByStore("STORE-001"))
+            when(transactionService.getTransactionsForStatistics("STORE-001"))
                     .thenReturn(transactions);
 
             mockMvc.perform(get("/api/transactions/stats/STORE-001"))
@@ -466,13 +477,13 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.averageAmount").value(150.0))
                     .andExpect(jsonPath("$.calculationNote").exists());
 
-            verify(transactionService).getTransactionsByStore("STORE-001");
+            verify(transactionService).getTransactionsForStatistics("STORE-001");
         }
 
         @Test
         @DisplayName("Should return 200 with zeroed totals when no transactions found")
         void getTransactionStats_emptyList() throws Exception {
-            when(transactionService.getTransactionsByStore("STORE-999"))
+            when(transactionService.getTransactionsForStatistics("STORE-999"))
                     .thenReturn(Collections.emptyList());
 
             mockMvc.perform(get("/api/transactions/stats/STORE-999"))
@@ -483,14 +494,14 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.totalAmount").value(0.0))
                     .andExpect(jsonPath("$.averageAmount").value(0.0));
 
-            verify(transactionService).getTransactionsByStore("STORE-999");
+            verify(transactionService).getTransactionsForStatistics("STORE-999");
         }
 
         @Test
         @DisplayName("Should return 500 on service exception")
         void getTransactionStats_serviceError() throws Exception {
-            when(transactionService.getTransactionsByStore("STORE-001"))
-                    .thenThrow(new RuntimeException("Database error"));
+            when(transactionService.getTransactionsForStatistics("STORE-001"))
+                    .thenThrow(new StatisticsCalculationException("Failed to calculate transaction statistics"));
 
             mockMvc.perform(get("/api/transactions/stats/STORE-001"))
                     .andExpect(status().isInternalServerError())
