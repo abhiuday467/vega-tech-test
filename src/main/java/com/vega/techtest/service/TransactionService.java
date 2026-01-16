@@ -19,8 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static com.vega.techtest.utils.Calculator.calculateAverageAmount;
 
 @Service
 public class TransactionService {
@@ -146,9 +150,41 @@ public class TransactionService {
         }
     }
 
-    public List<TransactionResponse> getTransactionsForStatistics(String storeId) {
+    public Map<String, Object> getTransactionsForStatistics(String storeId) {
         try {
-            return loadTransactionsByStore(storeId);
+            logger.info("Calculating transaction statistics for store: {}", storeId);
+
+            List<TransactionResponse> transactions = loadTransactionsByStore(storeId);
+
+            if (transactions.isEmpty()) {
+                logger.warn("No transactions found for store: {}", storeId);
+                return Map.of(
+                        "storeId", storeId,
+                        "message", "No transactions found for this store",
+                        "totalTransactions", 0,
+                        "totalAmount", 0.0,
+                        "averageAmount", 0.0
+                );
+            }
+
+            int totalTransactions = transactions.size();
+            BigDecimal totalAmount = transactions.stream()
+                    .map(TransactionResponse::getTotalAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal averageAmount = calculateAverageAmount(totalAmount, totalTransactions);
+
+            logger.info("Store {} statistics - Total transactions: {}, Total amount: {}, Average amount: {}",
+                    storeId, totalTransactions, totalAmount, averageAmount);
+
+            return Map.of(
+                    "storeId", storeId,
+                    "totalTransactions", totalTransactions,
+                    "totalAmount", totalAmount.doubleValue(),
+                    "averageAmount", averageAmount.doubleValue(),
+                    "calculationNote", "Average calculated as total amount divided by transaction count"
+            );
         } catch (Exception e) {
             throw new StatisticsCalculationException("Failed to calculate transaction statistics", e);
         }

@@ -1,8 +1,7 @@
 package com.vega.techtest.controller;
 
-import static com.vega.techtest.utils.Calculator.calculateAverageAmount;
-
 import com.vega.techtest.aspect.Timed;
+import com.vega.techtest.dto.TransactionItemRequest;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.service.TransactionService;
@@ -13,6 +12,7 @@ import io.micrometer.core.instrument.DistributionSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -163,6 +163,8 @@ public class TransactionController {
         ));
     }
 
+    // This endpoint should not go to production
+    @Profile("!prod")
     @Timed("transaction_submission_duration")
     @PostMapping("/sample")
     public ResponseEntity<Map<String, Object>> createSampleTransaction() {
@@ -177,9 +179,9 @@ public class TransactionController {
         request.setTimestamp(ZonedDateTime.now());
 
         request.setItems(List.of(
-                new com.vega.techtest.dto.TransactionItemRequest("Milk", "MILK001", new BigDecimal("2.50"), 1, "Dairy"),
-                new com.vega.techtest.dto.TransactionItemRequest("Bread", "BREAD001", new BigDecimal("1.20"), 1, "Bakery"),
-                new com.vega.techtest.dto.TransactionItemRequest("Coffee", "COFFEE001", new BigDecimal("3.99"), 1, "Beverages")
+                new TransactionItemRequest("Milk", "MILK001", new BigDecimal("2.50"), 1, "Dairy"),
+                new TransactionItemRequest("Bread", "BREAD001", new BigDecimal("1.20"), 1, "Bakery"),
+                new TransactionItemRequest("Coffee", "COFFEE001", new BigDecimal("3.99"), 1, "Beverages")
         ));
 
         TransactionResponse response = transactionService.processTransaction(request);
@@ -209,42 +211,8 @@ public class TransactionController {
     @Timed("transaction_retrieval_duration")
     @GetMapping("/stats/{storeId}")
     public ResponseEntity<Map<String, Object>> getTransactionStats(@PathVariable String storeId) {
-        logger.info("Calculating transaction statistics for store: {}", storeId);
-
-        List<TransactionResponse> transactions = transactionService.getTransactionsForStatistics(storeId);
-
-        if (transactions.isEmpty()) {
-            logger.warn("No transactions found for store: {}", storeId);
-            transactionRetrievalCounter.increment();
-
-            return ResponseEntity.ok(Map.of(
-                    "storeId", storeId,
-                    "message", "No transactions found for this store",
-                    "totalTransactions", 0,
-                    "totalAmount", 0.0,
-                    "averageAmount", 0.0
-            ));
-        }
-
-        int totalTransactions = transactions.size();
-        BigDecimal totalAmount = transactions.stream()
-                .map(TransactionResponse::getTotalAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal averageAmount = calculateAverageAmount(totalAmount, totalTransactions);
-
-        logger.info("Store {} statistics - Total transactions: {}, Total amount: {}, Average amount: {}",
-                storeId, totalTransactions, totalAmount, averageAmount);
-
+        Map<String, Object> statistics = transactionService.getTransactionsForStatistics(storeId);
         transactionRetrievalCounter.increment();
-
-        return ResponseEntity.ok(Map.of(
-                "storeId", storeId,
-                "totalTransactions", totalTransactions,
-                "totalAmount", totalAmount.doubleValue(),
-                "averageAmount", averageAmount.doubleValue(),
-                "calculationNote", "Average calculated as total amount divided by transaction count"
-        ));
+        return ResponseEntity.ok(statistics);
     }
 }

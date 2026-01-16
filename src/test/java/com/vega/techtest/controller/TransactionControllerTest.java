@@ -35,6 +35,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -461,13 +462,16 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 with calculated statistics")
         void getTransactionStats_success() throws Exception {
-            List<TransactionResponse> transactions = Arrays.asList(
-                    createTransactionResponseWithAmount("TXN-001", new BigDecimal("100.00")),
-                    createTransactionResponseWithAmount("TXN-002", new BigDecimal("200.00"))
+            Map<String, Object> statistics = Map.of(
+                    "storeId", "STORE-001",
+                    "totalTransactions", 2,
+                    "totalAmount", 300.0,
+                    "averageAmount", 150.0,
+                    "calculationNote", "Average calculated as total amount divided by transaction count"
             );
 
             when(transactionService.getTransactionsForStatistics("STORE-001"))
-                    .thenReturn(transactions);
+                    .thenReturn(statistics);
 
             mockMvc.perform(get("/api/transactions/stats/STORE-001"))
                     .andExpect(status().isOk())
@@ -483,8 +487,16 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 with zeroed totals when no transactions found")
         void getTransactionStats_emptyList() throws Exception {
+            Map<String, Object> statistics = Map.of(
+                    "storeId", "STORE-999",
+                    "message", "No transactions found for this store",
+                    "totalTransactions", 0,
+                    "totalAmount", 0.0,
+                    "averageAmount", 0.0
+            );
+
             when(transactionService.getTransactionsForStatistics("STORE-999"))
-                    .thenReturn(Collections.emptyList());
+                    .thenReturn(statistics);
 
             mockMvc.perform(get("/api/transactions/stats/STORE-999"))
                     .andExpect(status().isOk())
