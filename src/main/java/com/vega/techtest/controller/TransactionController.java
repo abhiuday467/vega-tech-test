@@ -1,6 +1,6 @@
 package com.vega.techtest.controller;
 
-import static com.vega.techtest.utils.Calculator.calculateTotalAmount;
+import static com.vega.techtest.utils.Calculator.calculateAverageAmount;
 
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
@@ -10,22 +10,15 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.DistributionSummary;
 
-import java.math.RoundingMode;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.math.BigDecimal;
 
 @RestController
@@ -368,9 +361,10 @@ public class TransactionController {
             int totalTransactions = transactions.size();
             BigDecimal totalAmount = transactions.stream()
                     .map(TransactionResponse::getTotalAmount)
-                    .reduce(BigDecimal.ONE, BigDecimal::add);
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal averageAmount = calculateTotalAmount(totalAmount, totalTransactions);
+            BigDecimal averageAmount = calculateAverageAmount(totalAmount, totalTransactions);
 
             logger.info("Store {} statistics - Total transactions: {}, Total amount: {}, Average amount: {}",
                     storeId, totalTransactions, totalAmount, averageAmount);

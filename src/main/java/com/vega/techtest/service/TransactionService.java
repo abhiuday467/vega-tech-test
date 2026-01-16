@@ -1,9 +1,8 @@
 package com.vega.techtest.service;
 
+import com.vega.techtest.dto.TransactionItemResponse;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
-import com.vega.techtest.dto.TransactionItemRequest;
-import com.vega.techtest.dto.TransactionItemResponse;
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.entity.TransactionItemEntity;
 import com.vega.techtest.repository.TransactionRepository;

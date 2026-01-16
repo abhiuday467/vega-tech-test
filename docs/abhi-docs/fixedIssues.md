@@ -1,7 +1,3 @@
-# Additional Issues
-
-This file documents issues and bugs discovered during the take-home test.
-
 ## Bug #1: Pre-increment Operator in Average Calculation
 
 **File:** `src/main/java/com/vega/techtest/utils/Calculator.java`
@@ -66,13 +62,3 @@ BigDecimal totalAmount = transactions.stream()
 ```
 
 ---
-
-## Summary
-
-| Bug | Location | Impact |
-|-----|----------|--------|
-| Pre-increment `++count` | Calculator.java:9 | Average divided by count+1 |
-| Wrong identity value | TransactionController.java:409 | Total always +1 |
-| Misleading method name | Calculator.java:8 | Code readability |
-
-All three bugs affect the `/api/transactions/stats/{storeId}` endpoint, causing incorrect statistics as reported by the store manager.

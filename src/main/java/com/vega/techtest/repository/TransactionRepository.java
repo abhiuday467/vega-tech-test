@@ -25,13 +25,12 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     List<TransactionEntity> findTransactionsByDateRange(@Param("startDate") ZonedDateTime startDate,
                                                         @Param("endDate") ZonedDateTime endDate);
 
-    List<TransactionEntity> findByPaymentMethodOrderByTransactionTimestampDesc(String paymentMethod);
-
-    @Query("SELECT t.storeId, COUNT(t) FROM TransactionEntity t GROUP BY t.storeId")
-    List<Object[]> countTransactionsByStore();
-
     @Query("SELECT t.storeId, SUM(t.totalAmount) FROM TransactionEntity t GROUP BY t.storeId")
     List<Object[]> getTotalSalesByStore();
+
+    //TODO Remove any index for findByPaymentMethodOrderByTransactionTimestampDesc and the composite indexing to improve the performance
+    //TODO Remove any index for countTransactionsByStore
+    //TODO Remove any index for getTotalSalesByStore
 
     boolean existsByTransactionId(String transactionId);
 }
