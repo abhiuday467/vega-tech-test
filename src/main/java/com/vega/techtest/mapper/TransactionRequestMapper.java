@@ -20,4 +20,6 @@ public interface TransactionRequestMapper {
     List<TransactionItem> toCommandItems(List<TransactionItemRequest> items);
 
     TransactionResponse toResponse(TransactionResult result);
+
+    List<TransactionResponse> toResponseList(List<TransactionResult> results);
 }

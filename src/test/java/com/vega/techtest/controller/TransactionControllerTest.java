@@ -416,9 +416,12 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 and transaction when found")
         void getTransaction_found() throws Exception {
+            TransactionResult result = createTransactionResult("TXN-001");
             TransactionResponse response = createTransactionResponse("TXN-001");
 
             when(transactionService.getTransactionById("TXN-001"))
+                    .thenReturn(result);
+            when(transactionRequestMapper.toResponse(any(TransactionResult.class)))
                     .thenReturn(response);
 
             mockMvc.perform(get("/api/transactions/TXN-001"))
@@ -463,12 +466,18 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 with transactions list")
         void getTransactionsByStore_success() throws Exception {
+            List<TransactionResult> results = Arrays.asList(
+                    createTransactionResult("TXN-001"),
+                    createTransactionResult("TXN-002")
+            );
             List<TransactionResponse> transactions = Arrays.asList(
                     createTransactionResponse("TXN-001"),
                     createTransactionResponse("TXN-002")
             );
 
             when(transactionService.getTransactionsByStore("STORE-001"))
+                    .thenReturn(results);
+            when(transactionRequestMapper.toResponseList(any()))
                     .thenReturn(transactions);
 
             mockMvc.perform(get("/api/transactions/store/STORE-001"))
@@ -503,12 +512,18 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 with transactions list")
         void getTransactionsByCustomer_success() throws Exception {
+            List<TransactionResult> results = Arrays.asList(
+                    createTransactionResult("TXN-001"),
+                    createTransactionResult("TXN-002")
+            );
             List<TransactionResponse> transactions = Arrays.asList(
                     createTransactionResponse("TXN-001"),
                     createTransactionResponse("TXN-002")
             );
 
             when(transactionService.getTransactionsByCustomer("CUST-001"))
+                    .thenReturn(results);
+            when(transactionRequestMapper.toResponseList(any()))
                     .thenReturn(transactions);
 
             mockMvc.perform(get("/api/transactions/customer/CUST-001"))
@@ -541,12 +556,18 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 with transactions list")
         void getTransactionsByTill_success() throws Exception {
+            List<TransactionResult> results = Arrays.asList(
+                    createTransactionResult("TXN-001"),
+                    createTransactionResult("TXN-002")
+            );
             List<TransactionResponse> transactions = Arrays.asList(
                     createTransactionResponse("TXN-001"),
                     createTransactionResponse("TXN-002")
             );
 
             when(transactionService.getTransactionsByTill("TILL-001"))
+                    .thenReturn(results);
+            when(transactionRequestMapper.toResponseList(any()))
                     .thenReturn(transactions);
 
             mockMvc.perform(get("/api/transactions/till/TILL-001"))
@@ -579,12 +600,18 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 with transactions in date range")
         void getTransactionsByDateRange_success() throws Exception {
+            List<TransactionResult> results = Arrays.asList(
+                    createTransactionResult("TXN-001"),
+                    createTransactionResult("TXN-002")
+            );
             List<TransactionResponse> transactions = Arrays.asList(
                     createTransactionResponse("TXN-001"),
                     createTransactionResponse("TXN-002")
             );
 
             when(transactionService.getTransactionsByDateRange(any(ZonedDateTime.class), any(ZonedDateTime.class)))
+                    .thenReturn(results);
+            when(transactionRequestMapper.toResponseList(any()))
                     .thenReturn(transactions);
 
             mockMvc.perform(get("/api/transactions/date-range")

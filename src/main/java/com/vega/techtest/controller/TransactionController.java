@@ -57,7 +57,8 @@ public class TransactionController {
     @Timed("transaction_retrieval_duration")
     @GetMapping("/{transactionId}")
     public ResponseEntity<TransactionResponse> getTransaction(@PathVariable String transactionId) {
-        TransactionResponse transaction = transactionService.getTransactionById(transactionId);
+        TransactionResult result = transactionService.getTransactionById(transactionId);
+        TransactionResponse transaction = transactionRequestMapper.toResponse(result);
         metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(transaction);
@@ -66,7 +67,8 @@ public class TransactionController {
     @Timed("transaction_retrieval_duration")
     @GetMapping("/store/{storeId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByStore(@PathVariable String storeId) {
-        List<TransactionResponse> transactions = transactionService.getTransactionsByStore(storeId);
+        List<TransactionResult> results = transactionService.getTransactionsByStore(storeId);
+        List<TransactionResponse> transactions = transactionRequestMapper.toResponseList(results);
         metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
@@ -79,7 +81,8 @@ public class TransactionController {
     @Timed("transaction_retrieval_duration")
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByCustomer(@PathVariable String customerId) {
-        List<TransactionResponse> transactions = transactionService.getTransactionsByCustomer(customerId);
+        List<TransactionResult> results = transactionService.getTransactionsByCustomer(customerId);
+        List<TransactionResponse> transactions = transactionRequestMapper.toResponseList(results);
         metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
@@ -92,7 +95,8 @@ public class TransactionController {
     @Timed("transaction_retrieval_duration")
     @GetMapping("/till/{tillId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByTill(@PathVariable String tillId) {
-        List<TransactionResponse> transactions = transactionService.getTransactionsByTill(tillId);
+        List<TransactionResult> results = transactionService.getTransactionsByTill(tillId);
+        List<TransactionResponse> transactions = transactionRequestMapper.toResponseList(results);
         metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
@@ -107,7 +111,8 @@ public class TransactionController {
     public ResponseEntity<Map<String, Object>> getTransactionsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate) {
-        List<TransactionResponse> transactions = transactionService.getTransactionsByDateRange(startDate, endDate);
+        List<TransactionResult> results = transactionService.getTransactionsByDateRange(startDate, endDate);
+        List<TransactionResponse> transactions = transactionRequestMapper.toResponseList(results);
         metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(

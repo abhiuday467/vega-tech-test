@@ -33,6 +33,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     //TODO Remove any index for getTotalSalesByStore
     //TODO Check we are UTC time in the database
     //TODO Check the Transaction pattern is in TXN-UUID
+    //TODO add swagger
 
     TransactionEntity findByStoreIdAndTillIdAndTransactionTimestamp(String storeId, String tillId,ZonedDateTime timestamp);
 }

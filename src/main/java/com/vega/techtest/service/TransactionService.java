@@ -81,17 +81,17 @@ public class TransactionService {
             return mapper.toResult(existingTransaction);
     }
 
-    public TransactionResponse getTransactionById(String transactionId) {
+    public TransactionResult getTransactionById(String transactionId) {
         try {
             return transactionRepository.findByTransactionId(transactionId)
-                    .map(mapper::toResponse)
+                    .map(mapper::toResult)
                     .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + transactionId));
         } catch (Exception e) {
             throw new TransactionRetrievalException("Failed to retrieve transaction", e);
         }
     }
 
-    public List<TransactionResponse> getTransactionsByStore(String storeId) {
+    public List<TransactionResult> getTransactionsByStore(String storeId) {
         try {
             return loadTransactionsByStore(storeId);
         } catch (Exception e) {
@@ -99,9 +99,9 @@ public class TransactionService {
         }
     }
 
-    public List<TransactionResponse> getTransactionsByCustomer(String customerId) {
+    public List<TransactionResult> getTransactionsByCustomer(String customerId) {
         try {
-            return mapper.toResponseList(
+            return mapper.toResultList(
                     transactionRepository.findByCustomerIdOrderByTransactionTimestampDesc(customerId)
             );
         } catch (Exception e) {
@@ -109,9 +109,9 @@ public class TransactionService {
         }
     }
 
-    public List<TransactionResponse> getTransactionsByTill(String tillId) {
+    public List<TransactionResult> getTransactionsByTill(String tillId) {
         try {
-            return mapper.toResponseList(
+            return mapper.toResultList(
                     transactionRepository.findByTillIdOrderByTransactionTimestampDesc(tillId)
             );
         } catch (Exception e) {
@@ -119,9 +119,9 @@ public class TransactionService {
         }
     }
 
-    public List<TransactionResponse> getTransactionsByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
+    public List<TransactionResult> getTransactionsByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
         try {
-            return mapper.toResponseList(
+            return mapper.toResultList(
                     transactionRepository.findTransactionsByDateRange(startDate, endDate)
             );
         } catch (Exception e) {
@@ -133,7 +133,7 @@ public class TransactionService {
         try {
             logger.info("Calculating transaction statistics for store: {}", storeId);
 
-            List<TransactionResponse> transactions = loadTransactionsByStore(storeId);
+            List<TransactionResult> transactions = loadTransactionsByStore(storeId);
 
             if (transactions.isEmpty()) {
                 logger.warn("No transactions found for store: {}", storeId);
@@ -148,7 +148,7 @@ public class TransactionService {
 
             int totalTransactions = transactions.size();
             BigDecimal totalAmount = transactions.stream()
-                    .map(TransactionResponse::getTotalAmount)
+                    .map(TransactionResult::totalAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -169,8 +169,8 @@ public class TransactionService {
         }
     }
 
-    private List<TransactionResponse> loadTransactionsByStore(String storeId) {
-        return mapper.toResponseList(
+    private List<TransactionResult> loadTransactionsByStore(String storeId) {
+        return mapper.toResultList(
                 transactionRepository.findByStoreIdOrderByTransactionTimestampDesc(storeId)
         );
     }

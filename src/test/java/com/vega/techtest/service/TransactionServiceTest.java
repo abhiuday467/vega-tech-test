@@ -219,7 +219,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
-            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
+            when(mapper.toResultList(entities)).thenReturn(toResults(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -238,7 +238,7 @@ class TransactionServiceTest {
         void getTransactionsForStatistics_emptyList() {
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-999"))
                     .thenReturn(Collections.emptyList());
-            when(mapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
+            when(mapper.toResultList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-999");
 
@@ -262,7 +262,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
-            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
+            when(mapper.toResultList(entities)).thenReturn(toResults(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -297,7 +297,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
-            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
+            when(mapper.toResultList(entities)).thenReturn(toResults(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -317,7 +317,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
-            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
+            when(mapper.toResultList(entities)).thenReturn(toResults(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -355,25 +355,12 @@ class TransactionServiceTest {
         return entity;
     }
 
-    private TransactionResponse createTransactionResponse(TransactionEntity entity) {
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId(entity.getTransactionId());
-        response.setCustomerId(entity.getCustomerId());
-        response.setStoreId(entity.getStoreId());
-        response.setTillId(entity.getTillId());
-        response.setPaymentMethod(entity.getPaymentMethod());
-        response.setTotalAmount(entity.getTotalAmount());
-        response.setCurrency(entity.getCurrency());
-        response.setTransactionTimestamp(entity.getTransactionTimestamp());
-        return response;
-    }
-
-    private List<TransactionResponse> toResponses(List<TransactionEntity> entities) {
-        List<TransactionResponse> responses = new ArrayList<>();
+    private List<TransactionResult> toResults(List<TransactionEntity> entities) {
+        List<TransactionResult> results = new ArrayList<>();
         for (TransactionEntity entity : entities) {
-            responses.add(createTransactionResponse(entity));
+            results.add(createTransactionResult(entity));
         }
-        return responses;
+        return results;
     }
 
     private TransactionResult createTransactionResult(TransactionEntity entity) {
