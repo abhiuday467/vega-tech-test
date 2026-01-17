@@ -2,7 +2,6 @@ package com.vega.techtest.validators;
 
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.exception.ReceiptTotalMismatchException;
-import com.vega.techtest.service.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

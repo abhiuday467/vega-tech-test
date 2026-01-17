@@ -1,6 +1,5 @@
 package com.vega.techtest.service;
 
-import com.vega.techtest.dto.TransactionItemResponse;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.entity.TransactionEntity;
@@ -9,6 +8,7 @@ import com.vega.techtest.exception.ResourceNotFoundException;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.exception.TransactionProcessingException;
 import com.vega.techtest.exception.TransactionRetrievalException;
+import com.vega.techtest.mapper.TransactionMapper;
 import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.validators.TransactionValidator;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.vega.techtest.utils.Calculator.calculateAverageAmount;
 
@@ -33,6 +32,7 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final TransactionValidator validator;
+    private final TransactionMapper mapper;
 
     @Transactional
     public TransactionResponse processTransaction(TransactionRequest request) {
@@ -48,41 +48,23 @@ public class TransactionService {
                 Optional<TransactionEntity> existingTransaction = transactionRepository.findByTransactionId(transactionId);
                 if (existingTransaction.isPresent()) {
                     logger.info("Transaction {} already exists, returning existing transaction", transactionId);
-                    return convertToResponse(existingTransaction.get());
+                    return mapper.toResponse(existingTransaction.get());
                 }
             }
 
-            TransactionEntity transaction = new TransactionEntity(
-                    transactionId,
-                    request.getCustomerId(),
-                    request.getStoreId(),
-                    request.getTillId(),
-                    request.getPaymentMethod(),
-                    request.getTotalAmount()
-            );
-
-            transaction.setCurrency(request.getCurrency());
-            transaction.setTransactionTimestamp(request.getTimestamp());
+            TransactionEntity transaction = mapper.toEntity(request);
+            transaction.setTransactionId(transactionId);
 
             if (request.getItems() != null && !request.getItems().isEmpty()) {
-                List<TransactionItemEntity> items = request.getItems().stream()
-                        .map(itemRequest -> new TransactionItemEntity(
-                                transaction,
-                                itemRequest.getProductName(),
-                                itemRequest.getProductCode(),
-                                itemRequest.getUnitPrice(),
-                                itemRequest.getQuantity(),
-                                itemRequest.getCategory()
-                        ))
-                        .collect(Collectors.toList());
-
+                List<TransactionItemEntity> items = mapper.toItemEntityList(request.getItems());
+                items.forEach(item -> item.setTransaction(transaction));
                 transaction.setItems(items);
             }
 
             TransactionEntity savedTransaction = transactionRepository.save(transaction);
             logger.info("Successfully saved transaction: {}", transactionId);
 
-            return convertToResponse(savedTransaction);
+            return mapper.toResponse(savedTransaction);
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (DuplicateKeyException e) {
@@ -104,13 +86,13 @@ public class TransactionService {
                             "Returning existing transaction: {}",
                     request.getTimestamp(), request.getStoreId(), request.getTillId(),
                     existingTransaction.getTransactionId());
-            return convertToResponse(existingTransaction);
+            return mapper.toResponse(existingTransaction);
     }
 
     public TransactionResponse getTransactionById(String transactionId) {
         try {
             return transactionRepository.findByTransactionId(transactionId)
-                    .map(this::convertToResponse)
+                    .map(mapper::toResponse)
                     .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + transactionId));
         } catch (ResourceNotFoundException e) {
             throw e;
@@ -129,10 +111,9 @@ public class TransactionService {
 
     public List<TransactionResponse> getTransactionsByCustomer(String customerId) {
         try {
-            return transactionRepository.findByCustomerIdOrderByTransactionTimestampDesc(customerId)
-                    .stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
+            return mapper.toResponseList(
+                    transactionRepository.findByCustomerIdOrderByTransactionTimestampDesc(customerId)
+            );
         } catch (Exception e) {
             throw new TransactionRetrievalException("Failed to retrieve transactions", e);
         }
@@ -140,10 +121,9 @@ public class TransactionService {
 
     public List<TransactionResponse> getTransactionsByTill(String tillId) {
         try {
-            return transactionRepository.findByTillIdOrderByTransactionTimestampDesc(tillId)
-                    .stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
+            return mapper.toResponseList(
+                    transactionRepository.findByTillIdOrderByTransactionTimestampDesc(tillId)
+            );
         } catch (Exception e) {
             throw new TransactionRetrievalException("Failed to retrieve transactions", e);
         }
@@ -151,10 +131,9 @@ public class TransactionService {
 
     public List<TransactionResponse> getTransactionsByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
         try {
-            return transactionRepository.findTransactionsByDateRange(startDate, endDate)
-                    .stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
+            return mapper.toResponseList(
+                    transactionRepository.findTransactionsByDateRange(startDate, endDate)
+            );
         } catch (Exception e) {
             throw new TransactionRetrievalException("Failed to retrieve transactions", e);
         }
@@ -201,46 +180,12 @@ public class TransactionService {
     }
 
     private List<TransactionResponse> loadTransactionsByStore(String storeId) {
-        return transactionRepository.findByStoreIdOrderByTransactionTimestampDesc(storeId)
-                .stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return mapper.toResponseList(
+                transactionRepository.findByStoreIdOrderByTransactionTimestampDesc(storeId)
+        );
     }
 
     private String generateTransactionId() {
         return "TXN-" + UUID.randomUUID().toString().toUpperCase();
-    }
-
-    private TransactionResponse convertToResponse(TransactionEntity entity) {
-        TransactionResponse response = new TransactionResponse(
-                entity.getTransactionId(),
-                entity.getCustomerId(),
-                entity.getStoreId(),
-                entity.getTillId(),
-                entity.getPaymentMethod(),
-                entity.getTotalAmount(),
-                entity.getCurrency(),
-                entity.getTransactionTimestamp(),
-                entity.getStatus()
-        );
-
-        response.setCreatedAt(entity.getCreatedAt());
-
-        if (entity.getItems() != null && !entity.getItems().isEmpty()) {
-            List<TransactionItemResponse> itemResponses = entity.getItems().stream()
-                    .map(item -> new TransactionItemResponse(
-                            item.getProductName(),
-                            item.getProductCode(),
-                            item.getUnitPrice(),
-                            item.getQuantity(),
-                            item.getTotalPrice(),
-                            item.getCategory()
-                    ))
-                    .collect(Collectors.toList());
-
-            response.setItems(itemResponses);
-        }
-
-        return response;
     }
 }
