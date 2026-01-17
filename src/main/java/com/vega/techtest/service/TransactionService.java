@@ -44,14 +44,7 @@ public class TransactionService {
             if (transactionId == null || transactionId.trim().isEmpty()) {
                 transactionId = generateTransactionId();
                 request.setTransactionId(transactionId);
-            } else {
-                Optional<TransactionEntity> existingTransaction = transactionRepository.findByTransactionId(transactionId);
-                if (existingTransaction.isPresent()) {
-                    logger.info("Transaction {} already exists, returning existing transaction", transactionId);
-                    return mapper.toResponse(existingTransaction.get());
-                }
             }
-
             TransactionEntity transaction = mapper.toEntity(request);
             transaction.setTransactionId(transactionId);
 
@@ -65,12 +58,9 @@ public class TransactionService {
             logger.info("Successfully saved transaction: {}", transactionId);
 
             return mapper.toResponse(savedTransaction);
-        } catch (IllegalArgumentException e) {
-            throw e;
         } catch (DuplicateKeyException e) {
            return  getDuplicateTransaction(request);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new TransactionProcessingException("Failed to process transaction", e);
         }
     }
@@ -94,8 +84,6 @@ public class TransactionService {
             return transactionRepository.findByTransactionId(transactionId)
                     .map(mapper::toResponse)
                     .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + transactionId));
-        } catch (ResourceNotFoundException e) {
-            throw e;
         } catch (Exception e) {
             throw new TransactionRetrievalException("Failed to retrieve transaction", e);
         }

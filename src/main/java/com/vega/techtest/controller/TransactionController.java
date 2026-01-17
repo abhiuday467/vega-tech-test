@@ -170,7 +170,6 @@ public class TransactionController {
     @PostMapping("/sample")
     public ResponseEntity<Map<String, Object>> createSampleTransaction() {
         TransactionRequest request = new TransactionRequest();
-        request.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         request.setCustomerId("CUST-" + (int) (Math.random() * 99999));
         request.setStoreId("STORE-001");
         request.setTillId("TILL-" + (int) (Math.random() * 10 + 1));

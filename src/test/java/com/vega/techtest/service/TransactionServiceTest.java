@@ -11,6 +11,7 @@ import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.exception.StatisticsCalculationException;
+import com.vega.techtest.mapper.TransactionMapper;
 import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.validators.TransactionValidator;
 import org.springframework.dao.DuplicateKeyException;
@@ -39,6 +40,9 @@ class TransactionServiceTest {
     @Mock
     private TransactionValidator validator;
 
+    @Mock
+    private TransactionMapper mapper;
+
     @InjectMocks
     private TransactionService transactionService;
 
@@ -55,8 +59,22 @@ class TransactionServiceTest {
         request.setTotalAmount(new BigDecimal("12.50"));
         request.setTimestamp(timestamp);
 
+        TransactionEntity mappedEntity = new TransactionEntity(
+                null,
+                "CUST-1",
+                "STORE-1",
+                "TILL-1",
+                "card",
+                new BigDecimal("12.50")
+        );
+        mappedEntity.setCurrency("GBP");
+        mappedEntity.setTransactionTimestamp(timestamp);
+
+        when(mapper.toEntity(request)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(mapper.toResponse(any(TransactionEntity.class)))
+                .thenAnswer(invocation -> createTransactionResponse(invocation.getArgument(0)));
 
         TransactionResponse response = transactionService.processTransaction(request);
 
@@ -82,6 +100,17 @@ class TransactionServiceTest {
         request.setTotalAmount(new BigDecimal("9.99"));
         request.setTimestamp(timestamp);
 
+        TransactionEntity mappedEntity = new TransactionEntity(
+                null,
+                null,
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                new BigDecimal("9.99")
+        );
+        mappedEntity.setCurrency("GBP");
+        mappedEntity.setTransactionTimestamp(timestamp);
+
         TransactionEntity existingEntity = new TransactionEntity(
                 "TXN-EXIST",
                 "CUST-1",
@@ -93,7 +122,12 @@ class TransactionServiceTest {
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
 
-        when(transactionRepository.findByTransactionId("TXN-EXIST")).thenReturn(Optional.of(existingEntity));
+        when(mapper.toEntity(request)).thenReturn(mappedEntity);
+        when(transactionRepository.save(any(TransactionEntity.class)))
+                .thenThrow(new DuplicateKeyException("Duplicate key"));
+        when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
+                .thenReturn(existingEntity);
+        when(mapper.toResponse(existingEntity)).thenReturn(createTransactionResponse(existingEntity));
 
         TransactionResponse response = transactionService.processTransaction(request);
 
@@ -101,8 +135,8 @@ class TransactionServiceTest {
         assertThat(response.getStoreId()).isEqualTo("STORE-1");
         assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
 
-        verify(transactionRepository).findByTransactionId("TXN-EXIST");
-        verify(transactionRepository, never()).save(any(TransactionEntity.class));
+        verify(transactionRepository).save(any(TransactionEntity.class));
+        verify(transactionRepository).findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp);
     }
 
     @Test
@@ -117,6 +151,17 @@ class TransactionServiceTest {
         request.setPaymentMethod("cash");
         request.setTotalAmount(new BigDecimal("9.99"));
 
+        TransactionEntity mappedEntity = new TransactionEntity(
+                null,
+                null,
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                new BigDecimal("9.99")
+        );
+        mappedEntity.setCurrency("GBP");
+        mappedEntity.setTransactionTimestamp(timestamp);
+
         TransactionEntity existingEntity = new TransactionEntity(
                 "TXN-EXISTING",
                 "CUST-1",
@@ -128,10 +173,12 @@ class TransactionServiceTest {
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
 
+        when(mapper.toEntity(request)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenThrow(new DuplicateKeyException("Duplicate key"));
         when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
                 .thenReturn(existingEntity);
+        when(mapper.toResponse(existingEntity)).thenReturn(createTransactionResponse(existingEntity));
 
         TransactionResponse response = transactionService.processTransaction(request);
 
@@ -159,6 +206,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
+            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -177,6 +225,7 @@ class TransactionServiceTest {
         void getTransactionsForStatistics_emptyList() {
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-999"))
                     .thenReturn(Collections.emptyList());
+            when(mapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-999");
 
@@ -200,6 +249,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
+            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -234,6 +284,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
+            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -253,6 +304,7 @@ class TransactionServiceTest {
 
             when(transactionRepository.findByStoreIdOrderByTransactionTimestampDesc("STORE-001"))
                     .thenReturn(entities);
+            when(mapper.toResponseList(entities)).thenReturn(toResponses(entities));
 
             Map<String, Object> result = transactionService.getTransactionsForStatistics("STORE-001");
 
@@ -288,5 +340,26 @@ class TransactionServiceTest {
         entity.setCurrency("GBP");
         entity.setTransactionTimestamp(ZonedDateTime.now());
         return entity;
+    }
+
+    private TransactionResponse createTransactionResponse(TransactionEntity entity) {
+        TransactionResponse response = new TransactionResponse();
+        response.setTransactionId(entity.getTransactionId());
+        response.setCustomerId(entity.getCustomerId());
+        response.setStoreId(entity.getStoreId());
+        response.setTillId(entity.getTillId());
+        response.setPaymentMethod(entity.getPaymentMethod());
+        response.setTotalAmount(entity.getTotalAmount());
+        response.setCurrency(entity.getCurrency());
+        response.setTransactionTimestamp(entity.getTransactionTimestamp());
+        return response;
+    }
+
+    private List<TransactionResponse> toResponses(List<TransactionEntity> entities) {
+        List<TransactionResponse> responses = new ArrayList<>();
+        for (TransactionEntity entity : entities) {
+            responses.add(createTransactionResponse(entity));
+        }
+        return responses;
     }
 }
