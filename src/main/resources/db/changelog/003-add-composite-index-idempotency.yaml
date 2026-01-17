@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-drop-redundant-timestamp-index
+      author: tech-test
+      comment: Drop single-column timestamp index as it will be replaced by composite index
+      changes:
+        - dropIndex:
+            tableName: transactions
+            indexName: idx_transactions_timestamp
+      rollback:
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_timestamp
+            columns:
+              - column:
+                  name: transaction_timestamp
+
+  - changeSet:
+      id: 007-add-composite-index-timestamp-store-till
+      author: tech-test
+      comment: Add composite index for idempotency check (timestamp, store_id, till_id) - timestamp first for optimal selectivity. This also serves timestamp-only queries via leftmost prefix rule.
+      changes:
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_timestamp_store_till
+            columns:
+              - column:
+                  name: transaction_timestamp
+              - column:
+                  name: store_id
+              - column:
+                  name: till_id
+      rollback:
+        - dropIndex:
+            tableName: transactions
+            indexName: idx_transactions_timestamp_store_till

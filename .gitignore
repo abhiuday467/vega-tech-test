@@ -80,3 +80,7 @@ application-local.yml
 application-*.yml
 !application.yml
 !application-test.yml
+
+### Generated sources ###
+/src/main/generated/
+/src/test/generated_tests/

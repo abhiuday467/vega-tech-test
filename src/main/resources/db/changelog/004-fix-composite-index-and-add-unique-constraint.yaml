@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-drop-old-composite-index-wrong-order
+      author: tech-test
+      comment: Drop the old composite index with incorrect column order (timestamp, store_id, till_id)
+      changes:
+        - dropIndex:
+            tableName: transactions
+            indexName: idx_transactions_timestamp_store_till
+      rollback:
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_timestamp_store_till
+            columns:
+              - column:
+                  name: transaction_timestamp
+              - column:
+                  name: store_id
+              - column:
+                  name: till_id
+
+  - changeSet:
+      id: 010-add-unique-constraint-correct-order
+      author: tech-test
+      comment: Add unique constraint on (store_id, till_id, transaction_timestamp) for idempotency. This automatically creates an index with the correct column order.
+      changes:
+        - addUniqueConstraint:
+            tableName: transactions
+            columnNames: store_id, till_id, transaction_timestamp
+            constraintName: uk_transactions_store_till_timestamp
+      rollback:
+        - dropUniqueConstraint:
+            tableName: transactions
+            constraintName: uk_transactions_store_till_timestamp

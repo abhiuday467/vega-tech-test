@@ -3,11 +3,17 @@ package com.vega.techtest.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+@EqualsAndHashCode(of = {"timestamp", "storeId", "tillId"})
+@Getter
+@Setter
 public class TransactionRequest {
 
     private String transactionId;
@@ -16,6 +22,7 @@ public class TransactionRequest {
     @NotBlank(message = "Store ID is required")
     private String storeId;
 
+    @NotBlank(message = "Till ID is required")
     private String tillId;
 
     @NotBlank(message = "Payment method is required")
@@ -27,6 +34,7 @@ public class TransactionRequest {
 
     private String currency = "GBP";
 
+    @NotNull(message = "Transaction creation time is required")
     private ZonedDateTime timestamp;
 
     private List<TransactionItemRequest> items;
@@ -43,77 +51,5 @@ public class TransactionRequest {
         this.paymentMethod = paymentMethod;
         this.totalAmount = totalAmount;
         this.timestamp = ZonedDateTime.now();
-    }
-
-    public String getTransactionId() {
-        return transactionId;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
-    }
-
-    public String getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(String customerId) {
-        this.customerId = customerId;
-    }
-
-    public String getStoreId() {
-        return storeId;
-    }
-
-    public void setStoreId(String storeId) {
-        this.storeId = storeId;
-    }
-
-    public String getTillId() {
-        return tillId;
-    }
-
-    public void setTillId(String tillId) {
-        this.tillId = tillId;
-    }
-
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public ZonedDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(ZonedDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public List<TransactionItemRequest> getItems() {
-        return items;
-    }
-
-    public void setItems(List<TransactionItemRequest> items) {
-        this.items = items;
     }
 }
