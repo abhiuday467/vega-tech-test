@@ -107,6 +107,9 @@ public class TransactionValidator {
     }
 
     private void validateCommandRequiredFields(CreateTransactionCommand command) {
+        if (command.transactionId() != null && !command.transactionId().trim().isEmpty()) {
+            validateTransactionIdFormat(command.transactionId());
+        }
         if (command.storeId() == null || command.storeId().trim().isEmpty()) {
             throw new IllegalArgumentException("Store ID is required");
         }
@@ -124,6 +127,21 @@ public class TransactionValidator {
         }
         if (command.timestamp() == null) {
             throw new IllegalArgumentException("Transaction creation time is required");
+        }
+    }
+
+    private void validateTransactionIdFormat(String transactionId) {
+        String trimmedId = transactionId.trim();
+
+        if (!trimmedId.startsWith("TXN-")) {
+            throw new IllegalArgumentException("Transaction ID must start with 'TXN-'");
+        }
+
+        String suffix = trimmedId.substring(4);
+        try {
+            java.util.UUID.fromString(suffix);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Transaction ID must have a valid UUID after 'TXN-' prefix");
         }
     }
 

@@ -3,14 +3,17 @@ package com.vega.techtest.validators;
 import com.vega.techtest.dto.TransactionItemRequest;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.exception.ReceiptTotalMismatchException;
+import com.vega.techtest.service.command.CreateTransactionCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -254,5 +257,162 @@ class TransactionValidatorTest {
         request.setTotalAmount(new BigDecimal("10.00"));
         request.setTimestamp(ZonedDateTime.now());
         return request;
+    }
+
+    @Nested
+    @DisplayName("validateTransactionCommand - Transaction ID Format Tests")
+    class TransactionIdFormatTests {
+
+        @Test
+        @DisplayName("Should pass validation with valid transaction ID (TXN- prefix with UUID)")
+        void validateTransactionCommand_validTransactionId() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TXN-" + UUID.randomUUID().toString().toUpperCase(),
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertDoesNotThrow(() -> validator.validateTransactionCommand(command));
+        }
+
+        @Test
+        @DisplayName("Should pass validation when transaction ID is null")
+        void validateTransactionCommand_nullTransactionId() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    null,
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertDoesNotThrow(() -> validator.validateTransactionCommand(command));
+        }
+
+        @Test
+        @DisplayName("Should pass validation when transaction ID is empty string")
+        void validateTransactionCommand_emptyTransactionId() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "",
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertDoesNotThrow(() -> validator.validateTransactionCommand(command));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when transaction ID doesn't start with TXN-")
+        void validateTransactionCommand_invalidPrefix() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TRANS-" + UUID.randomUUID().toString(),
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertThatThrownBy(() -> validator.validateTransactionCommand(command))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Transaction ID must start with 'TXN-'");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when transaction ID has no value after TXN-")
+        void validateTransactionCommand_noValueAfterPrefix() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TXN-",
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertThatThrownBy(() -> validator.validateTransactionCommand(command))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Transaction ID must have a valid UUID after 'TXN-' prefix");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when transaction ID has invalid UUID format")
+        void validateTransactionCommand_invalidUuidFormat() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TXN-NOT-A-UUID",
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertThatThrownBy(() -> validator.validateTransactionCommand(command))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Transaction ID must have a valid UUID after 'TXN-' prefix");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when transaction ID has malformed UUID")
+        void validateTransactionCommand_malformedUuid() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TXN-12345",
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertThatThrownBy(() -> validator.validateTransactionCommand(command))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Transaction ID must have a valid UUID after 'TXN-' prefix");
+        }
+
+        @Test
+        @DisplayName("Should accept transaction ID with lowercase UUID")
+        void validateTransactionCommand_lowercaseUuid() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TXN-" + UUID.randomUUID().toString().toLowerCase(),
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertDoesNotThrow(() -> validator.validateTransactionCommand(command));
+        }
     }
 }
