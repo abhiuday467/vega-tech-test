@@ -65,6 +65,23 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(ReceiptTotalMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleReceiptTotalMismatchException(
+            ReceiptTotalMismatchException ex, WebRequest request) {
+        logger.warn("Receipt total mismatch - Calculated: {}, Provided: {}",
+                ex.getCalculatedTotal(), ex.getProvidedTotal());
+        transactionErrorCounter.increment();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "Receipt total mismatch");
+        response.put("error", ex.getMessage());
+        response.put("calculatedTotal", ex.getCalculatedTotal());
+        response.put("providedTotal", ex.getProvidedTotal());
+
+        return ResponseEntity.unprocessableEntity().body(response);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Void> handleResourceNotFoundException(
             ResourceNotFoundException ex, WebRequest request) {

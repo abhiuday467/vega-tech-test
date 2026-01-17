@@ -7,6 +7,7 @@ import com.vega.techtest.dto.TransactionItemResponse;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.exception.GlobalExceptionHandler;
+import com.vega.techtest.exception.ReceiptTotalMismatchException;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.exception.TransactionProcessingException;
 import com.vega.techtest.exception.TransactionRetrievalException;
@@ -116,8 +117,10 @@ class TransactionControllerTest {
             TransactionRequest request = new TransactionRequest();
             request.setCustomerId("CUST-001");
             // Missing storeId (required)
+            // Missing tillId (required)
             // Missing paymentMethod (required)
             // Missing totalAmount (required)
+            // Missing timestamp (required)
 
             double errorCounterBefore = getCounterValue("transaction_errors_total");
 
@@ -129,8 +132,10 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.storeId").value("Store ID is required"))
+                    .andExpect(jsonPath("$.errors.tillId").value("Till ID is required"))
                     .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"))
-                    .andExpect(jsonPath("$.errors.totalAmount").value("Total amount is required"));
+                    .andExpect(jsonPath("$.errors.totalAmount").value("Total amount is required"))
+                    .andExpect(jsonPath("$.errors.timestamp").value("Transaction creation time is required"));
 
             double errorCounterAfter = getCounterValue("transaction_errors_total");
             assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
@@ -317,6 +322,74 @@ class TransactionControllerTest {
             assertThat(counterAfter).isEqualTo(counterBefore + 2);
 
             verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return same transaction for duplicate composite key (storeId, tillId, timestamp)")
+        void submitTransaction_idempotentCompositeKey() throws Exception {
+            ZonedDateTime timestamp = ZonedDateTime.now();
+
+            TransactionRequest request = createValidTransactionRequest();
+            request.setTransactionId(null); // No transaction ID provided
+            request.setStoreId("STORE-001");
+            request.setTillId("TILL-001");
+            request.setTimestamp(timestamp);
+
+            TransactionResponse response = createTransactionResponse("TXN-GENERATED");
+
+            when(transactionService.processTransaction(any(TransactionRequest.class)))
+                    .thenReturn(response);
+
+            double counterBefore = getCounterValue("transaction_submissions_total");
+
+            // First submission
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("success"))
+                    .andExpect(jsonPath("$.transactionId").value("TXN-GENERATED"));
+
+            // Second submission with same storeId, tillId, and timestamp (idempotent)
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("success"))
+                    .andExpect(jsonPath("$.transactionId").value("TXN-GENERATED"));
+
+            double counterAfter = getCounterValue("transaction_submissions_total");
+            assertThat(counterAfter).isEqualTo(counterBefore + 2);
+
+            verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
+        }
+
+        @Test
+        @DisplayName("Should return 422 when receipt total mismatch occurs")
+        void submitTransaction_receiptTotalMismatch() throws Exception {
+            TransactionRequest request = createValidTransactionRequest();
+
+            when(transactionService.processTransaction(any(TransactionRequest.class)))
+                    .thenThrow(new ReceiptTotalMismatchException(
+                            "Receipt total mismatch: calculated total does not match provided total",
+                            new BigDecimal("5.00"),
+                            new BigDecimal("25.50")
+                    ));
+
+            double errorCounterBefore = getCounterValue("transaction_errors_total");
+
+            mockMvc.perform(post("/api/transactions/submit")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").value("Receipt total mismatch"))
+                    .andExpect(jsonPath("$.error").value("Receipt total mismatch: calculated total does not match provided total"))
+                    .andExpect(jsonPath("$.calculatedTotal").value(5.00))
+                    .andExpect(jsonPath("$.providedTotal").value(25.50));
+
+            double errorCounterAfter = getCounterValue("transaction_errors_total");
+            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
         }
 
         @Test
@@ -716,7 +789,7 @@ class TransactionControllerTest {
         request.setStoreId("STORE-001");
         request.setTillId("TILL-001");
         request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("25.50"));
+        request.setTotalAmount(new BigDecimal("5.50"));
         request.setCurrency("GBP");
         request.setTimestamp(ZonedDateTime.now());
 

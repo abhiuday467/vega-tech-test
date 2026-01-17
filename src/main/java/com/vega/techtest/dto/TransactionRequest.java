@@ -16,6 +16,7 @@ public class TransactionRequest {
     @NotBlank(message = "Store ID is required")
     private String storeId;
 
+    @NotBlank(message = "Till ID is required")
     private String tillId;
 
     @NotBlank(message = "Payment method is required")
@@ -27,6 +28,7 @@ public class TransactionRequest {
 
     private String currency = "GBP";
 
+    @NotNull(message = "Transaction creation time is required")
     private ZonedDateTime timestamp;
 
     private List<TransactionItemRequest> items;

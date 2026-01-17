@@ -12,6 +12,7 @@ import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.repository.TransactionRepository;
+import com.vega.techtest.validators.TransactionValidator;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -34,19 +35,27 @@ class TransactionServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
+    @Mock
+    private TransactionValidator validator;
+
     @InjectMocks
     private TransactionService transactionService;
 
     @Test
     @DisplayName("Should generate transaction id and persist transaction")
     void processTransaction_generatesIdAndSaves() {
+        ZonedDateTime timestamp = ZonedDateTime.now();
+
         TransactionRequest request = new TransactionRequest();
         request.setCustomerId("CUST-1");
         request.setStoreId("STORE-1");
         request.setTillId("TILL-1");
         request.setPaymentMethod("card");
         request.setTotalAmount(new BigDecimal("12.50"));
+        request.setTimestamp(timestamp);
 
+        when(transactionRepository.findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1"))
+                .thenReturn(Optional.empty());
         when(transactionRepository.findByTransactionId(any())).thenReturn(Optional.empty());
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -67,12 +76,15 @@ class TransactionServiceTest {
     @Test
     @DisplayName("Should return existing transaction for duplicate id (idempotent)")
     void processTransaction_returnsExistingForDuplicateId() {
+        ZonedDateTime timestamp = ZonedDateTime.now();
+
         TransactionRequest request = new TransactionRequest();
         request.setTransactionId("TXN-EXIST");
         request.setStoreId("STORE-1");
         request.setTillId("TILL-1");
         request.setPaymentMethod("cash");
         request.setTotalAmount(new BigDecimal("9.99"));
+        request.setTimestamp(timestamp);
 
         TransactionEntity existingEntity = new TransactionEntity(
                 "TXN-EXIST",
@@ -83,8 +95,10 @@ class TransactionServiceTest {
                 new BigDecimal("9.99")
         );
         existingEntity.setCurrency("GBP");
-        existingEntity.setTransactionTimestamp(ZonedDateTime.now());
+        existingEntity.setTransactionTimestamp(timestamp);
 
+        when(transactionRepository.findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1"))
+                .thenReturn(Optional.empty());
         when(transactionRepository.findByTransactionId("TXN-EXIST")).thenReturn(Optional.of(existingEntity));
 
         TransactionResponse response = transactionService.processTransaction(request);
@@ -94,6 +108,43 @@ class TransactionServiceTest {
         assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
 
         verify(transactionRepository).findByTransactionId("TXN-EXIST");
+        verify(transactionRepository, never()).save(any(TransactionEntity.class));
+    }
+
+    @Test
+    @DisplayName("Should return existing transaction for duplicate storeId, tillId, and timestamp (idempotent)")
+    void processTransaction_returnsExistingForDuplicateComposite() {
+        ZonedDateTime timestamp = ZonedDateTime.now();
+
+        TransactionRequest request = new TransactionRequest();
+        request.setStoreId("STORE-1");
+        request.setTillId("TILL-1");
+        request.setTimestamp(timestamp);
+        request.setPaymentMethod("cash");
+        request.setTotalAmount(new BigDecimal("9.99"));
+
+        TransactionEntity existingEntity = new TransactionEntity(
+                "TXN-EXISTING",
+                "CUST-1",
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                new BigDecimal("9.99")
+        );
+        existingEntity.setCurrency("GBP");
+        existingEntity.setTransactionTimestamp(timestamp);
+
+        when(transactionRepository.findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1"))
+                .thenReturn(Optional.of(existingEntity));
+
+        TransactionResponse response = transactionService.processTransaction(request);
+
+        assertThat(response.getTransactionId()).isEqualTo("TXN-EXISTING");
+        assertThat(response.getStoreId()).isEqualTo("STORE-1");
+        assertThat(response.getTillId()).isEqualTo("TILL-1");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
+
+        verify(transactionRepository).findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1");
         verify(transactionRepository, never()).save(any(TransactionEntity.class));
     }
 
