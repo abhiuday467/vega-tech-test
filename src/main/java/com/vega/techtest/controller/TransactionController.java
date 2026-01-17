@@ -5,14 +5,11 @@ import com.vega.techtest.dto.TransactionItemRequest;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.service.TransactionService;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.DistributionSummary;
+import com.vega.techtest.service.TransactionMetricsService;
 import jakarta.validation.Valid;
-
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -24,41 +21,13 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/transactions")
+@RequiredArgsConstructor
 public class TransactionController {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionController.class);
 
     private final TransactionService transactionService;
-    private final MeterRegistry meterRegistry;
-
-    private final Counter transactionSubmissionCounter;
-    private final Counter transactionRetrievalCounter;
-
-    private final DistributionSummary transactionAmountSummary;
-    private final DistributionSummary transactionItemCountSummary;
-
-    @Autowired
-    public TransactionController(TransactionService transactionService,
-                                 MeterRegistry meterRegistry) {
-        this.transactionService = transactionService;
-        this.meterRegistry = meterRegistry;
-
-        this.transactionSubmissionCounter = Counter.builder("transaction_submissions_total")
-                .description("Total number of transaction submissions via REST API")
-                .register(meterRegistry);
-        this.transactionRetrievalCounter = Counter.builder("transaction_retrievals_total")
-                .description("Total number of transaction retrievals via REST API")
-                .register(meterRegistry);
-
-        this.transactionAmountSummary = DistributionSummary.builder("transaction_amount")
-                .description("Distribution of transaction amounts")
-                .baseUnit("GBP")
-                .register(meterRegistry);
-        this.transactionItemCountSummary = DistributionSummary.builder("transaction_item_count")
-                .description("Distribution of number of items per transaction")
-                .baseUnit("items")
-                .register(meterRegistry);
-    }
+    private final TransactionMetricsService metricsService;
 
     @Timed("transaction_submission_duration")
     @PostMapping("/submit")
@@ -66,29 +35,7 @@ public class TransactionController {
         logger.info("Received transaction submission from till: {}", request.getTillId());
 
         TransactionResponse response = transactionService.processTransaction(request);
-
-        transactionSubmissionCounter.increment();
-
-        transactionAmountSummary.record(response.getTotalAmount().doubleValue());
-        transactionItemCountSummary.record(response.getItems().size());
-
-        Counter.builder("transaction_submissions_by_store")
-                .tag("store_id", request.getStoreId())
-                .description("Transaction submissions by store")
-                .register(meterRegistry)
-                .increment();
-
-        Counter.builder("transaction_submissions_by_till")
-                .tag("till_id", request.getTillId())
-                .description("Transaction submissions by till")
-                .register(meterRegistry)
-                .increment();
-
-        Counter.builder("transaction_submissions_by_payment_method")
-                .tag("payment_method", request.getPaymentMethod())
-                .description("Transaction submissions by payment method")
-                .register(meterRegistry)
-                .increment();
+        metricsService.recordTransactionSubmission(request, response);
 
         logger.info("Successfully processed transaction: {}", response.getTransactionId());
 
@@ -104,7 +51,7 @@ public class TransactionController {
     @GetMapping("/{transactionId}")
     public ResponseEntity<TransactionResponse> getTransaction(@PathVariable String transactionId) {
         TransactionResponse transaction = transactionService.getTransactionById(transactionId);
-        transactionRetrievalCounter.increment();
+        metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(transaction);
     }
@@ -113,7 +60,7 @@ public class TransactionController {
     @GetMapping("/store/{storeId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByStore(@PathVariable String storeId) {
         List<TransactionResponse> transactions = transactionService.getTransactionsByStore(storeId);
-        transactionRetrievalCounter.increment();
+        metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
                 "storeId", storeId,
@@ -126,7 +73,7 @@ public class TransactionController {
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByCustomer(@PathVariable String customerId) {
         List<TransactionResponse> transactions = transactionService.getTransactionsByCustomer(customerId);
-        transactionRetrievalCounter.increment();
+        metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
                 "customerId", customerId,
@@ -139,7 +86,7 @@ public class TransactionController {
     @GetMapping("/till/{tillId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByTill(@PathVariable String tillId) {
         List<TransactionResponse> transactions = transactionService.getTransactionsByTill(tillId);
-        transactionRetrievalCounter.increment();
+        metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
                 "tillId", tillId,
@@ -154,7 +101,7 @@ public class TransactionController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate) {
         List<TransactionResponse> transactions = transactionService.getTransactionsByDateRange(startDate, endDate);
-        transactionRetrievalCounter.increment();
+        metricsService.recordTransactionRetrieval();
 
         return ResponseEntity.ok(Map.of(
                 "startDate", startDate,
@@ -185,10 +132,7 @@ public class TransactionController {
         ));
 
         TransactionResponse response = transactionService.processTransaction(request);
-        transactionSubmissionCounter.increment();
-
-        transactionAmountSummary.record(response.getTotalAmount().doubleValue());
-        transactionItemCountSummary.record(response.getItems().size());
+        metricsService.recordTransactionSubmission(request, response);
 
         logger.info("Created sample transaction: {}", response.getTransactionId());
 
@@ -212,7 +156,7 @@ public class TransactionController {
     @GetMapping("/stats/{storeId}")
     public ResponseEntity<Map<String, Object>> getTransactionStats(@PathVariable String storeId) {
         Map<String, Object> statistics = transactionService.getTransactionsForStatistics(storeId);
-        transactionRetrievalCounter.increment();
+        metricsService.recordTransactionRetrieval();
         return ResponseEntity.ok(statistics);
     }
 }

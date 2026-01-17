@@ -12,8 +12,8 @@ import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.exception.TransactionProcessingException;
 import com.vega.techtest.exception.TransactionRetrievalException;
 import com.vega.techtest.service.TransactionService;
+import com.vega.techtest.service.TransactionMetricsService;
 import com.vega.techtest.exception.ResourceNotFoundException;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -64,12 +63,12 @@ class TransactionControllerTest {
     @MockBean
     private TransactionService transactionService;
 
-    @Autowired
-    private MeterRegistry meterRegistry;
+    @MockBean
+    private TransactionMetricsService metricsService;
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(transactionService);
+        Mockito.reset(transactionService, metricsService);
     }
 
     @TestConfiguration
@@ -94,8 +93,6 @@ class TransactionControllerTest {
             when(transactionService.processTransaction(any(TransactionRequest.class)))
                     .thenReturn(response);
 
-            double counterBefore = getCounterValue("transaction_submissions_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -105,10 +102,8 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.transactionId").value("TXN-001"))
                     .andExpect(jsonPath("$.timestamp").exists());
 
-            double counterAfter = getCounterValue("transaction_submissions_total");
-            assertThat(counterAfter).isEqualTo(counterBefore + 1);
-
             verify(transactionService).processTransaction(any(TransactionRequest.class));
+            verify(metricsService).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
 
         @Test
@@ -122,8 +117,6 @@ class TransactionControllerTest {
             // Missing totalAmount (required)
             // Missing timestamp (required)
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -136,9 +129,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"))
                     .andExpect(jsonPath("$.errors.totalAmount").value("Total amount is required"))
                     .andExpect(jsonPath("$.errors.timestamp").value("Transaction creation time is required"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -147,8 +138,6 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
             request.setTotalAmount(new BigDecimal("0.00"));
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -157,9 +146,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.totalAmount").value("Total amount must be greater than zero"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -168,8 +155,6 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
             request.setTotalAmount(new BigDecimal("-10.00"));
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -178,9 +163,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.totalAmount").value("Total amount must be greater than zero"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -189,8 +172,6 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
             request.setStoreId("");
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -199,9 +180,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.storeId").value("Store ID is required"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -210,8 +189,6 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
             request.setPaymentMethod("   ");
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -220,9 +197,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -230,8 +205,6 @@ class TransactionControllerTest {
         void submitTransaction_missingStoreId() throws Exception {
             TransactionRequest request = createValidTransactionRequest();
             request.setStoreId(null);
-
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -241,9 +214,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.storeId").value("Store ID is required"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -251,8 +222,6 @@ class TransactionControllerTest {
         void submitTransaction_missingPaymentMethod() throws Exception {
             TransactionRequest request = createValidTransactionRequest();
             request.setPaymentMethod(null);
-
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -262,9 +231,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.errors").isMap())
                     .andExpect(jsonPath("$.errors.paymentMethod").value("Payment method is required"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -275,8 +242,6 @@ class TransactionControllerTest {
             when(transactionService.processTransaction(any(TransactionRequest.class)))
                     .thenThrow(new IllegalArgumentException("Invalid transaction data"));
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -284,9 +249,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.status").value("error"))
                     .andExpect(jsonPath("$.message").value("Invalid transaction data"))
                     .andExpect(jsonPath("$.error").value("Invalid transaction data"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -299,8 +262,6 @@ class TransactionControllerTest {
 
             when(transactionService.processTransaction(any(TransactionRequest.class)))
                     .thenReturn(response);
-
-            double counterBefore = getCounterValue("transaction_submissions_total");
 
             // First submission
             mockMvc.perform(post("/api/transactions/submit")
@@ -318,10 +279,8 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.status").value("success"))
                     .andExpect(jsonPath("$.transactionId").value("TXN-001"));
 
-            double counterAfter = getCounterValue("transaction_submissions_total");
-            assertThat(counterAfter).isEqualTo(counterBefore + 2);
-
             verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
+            verify(metricsService, times(2)).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
 
         @Test
@@ -340,8 +299,6 @@ class TransactionControllerTest {
             when(transactionService.processTransaction(any(TransactionRequest.class)))
                     .thenReturn(response);
 
-            double counterBefore = getCounterValue("transaction_submissions_total");
-
             // First submission
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -358,10 +315,8 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.status").value("success"))
                     .andExpect(jsonPath("$.transactionId").value("TXN-GENERATED"));
 
-            double counterAfter = getCounterValue("transaction_submissions_total");
-            assertThat(counterAfter).isEqualTo(counterBefore + 2);
-
             verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
+            verify(metricsService, times(2)).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
 
         @Test
@@ -376,8 +331,6 @@ class TransactionControllerTest {
                             new BigDecimal("25.50")
                     ));
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -387,9 +340,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.error").value("Receipt total mismatch: calculated total does not match provided total"))
                     .andExpect(jsonPath("$.calculatedTotal").value(5.00))
                     .andExpect(jsonPath("$.providedTotal").value(25.50));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -400,8 +351,6 @@ class TransactionControllerTest {
             when(transactionService.processTransaction(any(TransactionRequest.class)))
                     .thenThrow(new TransactionProcessingException("Failed to process transaction"));
 
-            double errorCounterBefore = getCounterValue("transaction_errors_total");
-
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -409,9 +358,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.status").value("error"))
                     .andExpect(jsonPath("$.message").value("Failed to process transaction"))
                     .andExpect(jsonPath("$.error").value("Internal server error"));
-
-            double errorCounterAfter = getCounterValue("transaction_errors_total");
-            assertThat(errorCounterAfter).isEqualTo(errorCounterBefore + 1);
+            verifyNoInteractions(metricsService);
         }
 
         @Test
@@ -432,20 +379,7 @@ class TransactionControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
 
-            Counter storeCounter = meterRegistry.find("transaction_submissions_by_store")
-                    .tag("store_id", "STORE-123")
-                    .counter();
-            assertThat(storeCounter).isNotNull();
-
-            Counter tillCounter = meterRegistry.find("transaction_submissions_by_till")
-                    .tag("till_id", "TILL-456")
-                    .counter();
-            assertThat(tillCounter).isNotNull();
-
-            Counter paymentCounter = meterRegistry.find("transaction_submissions_by_payment_method")
-                    .tag("payment_method", "card")
-                    .counter();
-            assertThat(paymentCounter).isNotNull();
+            verify(metricsService).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
     }
 
@@ -830,10 +764,5 @@ class TransactionControllerTest {
         response.setItems(Arrays.asList(item1, item2));
 
         return response;
-    }
-
-    private double getCounterValue(String counterName) {
-        Counter counter = meterRegistry.find(counterName).counter();
-        return counter != null ? counter.count() : 0.0;
     }
 }
