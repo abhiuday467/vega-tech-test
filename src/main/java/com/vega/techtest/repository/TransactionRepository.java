@@ -31,6 +31,8 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     //TODO Remove any index for findByPaymentMethodOrderByTransactionTimestampDesc and the composite indexing to improve the performance
     //TODO Remove any index for countTransactionsByStore
     //TODO Remove any index for getTotalSalesByStore
+    //TODO Check we are UTC time in the database
+    //TODO Check the Transaction pattern is in TXN-UUID
 
     TransactionEntity findByStoreIdAndTillIdAndTransactionTimestamp(String storeId, String tillId,ZonedDateTime timestamp);
 }

@@ -11,8 +11,11 @@ import com.vega.techtest.exception.ReceiptTotalMismatchException;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.exception.TransactionProcessingException;
 import com.vega.techtest.exception.TransactionRetrievalException;
+import com.vega.techtest.mapper.TransactionRequestMapper;
 import com.vega.techtest.service.TransactionService;
 import com.vega.techtest.service.TransactionMetricsService;
+import com.vega.techtest.service.command.CreateTransactionCommand;
+import com.vega.techtest.service.command.TransactionResult;
 import com.vega.techtest.exception.ResourceNotFoundException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -66,9 +69,12 @@ class TransactionControllerTest {
     @MockBean
     private TransactionMetricsService metricsService;
 
+    @MockBean
+    private TransactionRequestMapper transactionRequestMapper;
+
     @BeforeEach
     void setUp() {
-        Mockito.reset(transactionService, metricsService);
+        Mockito.reset(transactionService, metricsService, transactionRequestMapper);
     }
 
     @TestConfiguration
@@ -88,9 +94,14 @@ class TransactionControllerTest {
         @DisplayName("Should return 200 and increment metrics on successful submission")
         void submitTransaction_success() throws Exception {
             TransactionRequest request = createValidTransactionRequest();
+            TransactionResult result = createTransactionResult("TXN-001");
             TransactionResponse response = createTransactionResponse("TXN-001");
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class)))
+                    .thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
+                    .thenReturn(result);
+            when(transactionRequestMapper.toResponse(any(TransactionResult.class)))
                     .thenReturn(response);
 
             mockMvc.perform(post("/api/transactions/submit")
@@ -102,7 +113,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.transactionId").value("TXN-001"))
                     .andExpect(jsonPath("$.timestamp").exists());
 
-            verify(transactionService).processTransaction(any(TransactionRequest.class));
+            verify(transactionService).processTransaction(any(CreateTransactionCommand.class));
             verify(metricsService).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
 
@@ -239,7 +250,8 @@ class TransactionControllerTest {
         void submitTransaction_invalidRequest() throws Exception {
             TransactionRequest request = createValidTransactionRequest();
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
                     .thenThrow(new IllegalArgumentException("Invalid transaction data"));
 
             mockMvc.perform(post("/api/transactions/submit")
@@ -258,9 +270,13 @@ class TransactionControllerTest {
             TransactionRequest request = createValidTransactionRequest();
             request.setTransactionId("TXN-001");
 
+            TransactionResult result = createTransactionResult("TXN-001");
             TransactionResponse response = createTransactionResponse("TXN-001");
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
+                    .thenReturn(result);
+            when(transactionRequestMapper.toResponse(any(TransactionResult.class)))
                     .thenReturn(response);
 
             // First submission
@@ -279,7 +295,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.status").value("success"))
                     .andExpect(jsonPath("$.transactionId").value("TXN-001"));
 
-            verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
+            verify(transactionService, times(2)).processTransaction(any(CreateTransactionCommand.class));
             verify(metricsService, times(2)).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
 
@@ -294,9 +310,13 @@ class TransactionControllerTest {
             request.setTillId("TILL-001");
             request.setTimestamp(timestamp);
 
+            TransactionResult result = createTransactionResult("TXN-GENERATED");
             TransactionResponse response = createTransactionResponse("TXN-GENERATED");
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
+                    .thenReturn(result);
+            when(transactionRequestMapper.toResponse(any(TransactionResult.class)))
                     .thenReturn(response);
 
             // First submission
@@ -315,7 +335,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.status").value("success"))
                     .andExpect(jsonPath("$.transactionId").value("TXN-GENERATED"));
 
-            verify(transactionService, times(2)).processTransaction(any(TransactionRequest.class));
+            verify(transactionService, times(2)).processTransaction(any(CreateTransactionCommand.class));
             verify(metricsService, times(2)).recordTransactionSubmission(any(TransactionRequest.class), any(TransactionResponse.class));
         }
 
@@ -324,7 +344,8 @@ class TransactionControllerTest {
         void submitTransaction_receiptTotalMismatch() throws Exception {
             TransactionRequest request = createValidTransactionRequest();
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
                     .thenThrow(new ReceiptTotalMismatchException(
                             "Receipt total mismatch: calculated total does not match provided total",
                             new BigDecimal("5.00"),
@@ -348,7 +369,8 @@ class TransactionControllerTest {
         void submitTransaction_internalError() throws Exception {
             TransactionRequest request = createValidTransactionRequest();
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
                     .thenThrow(new TransactionProcessingException("Failed to process transaction"));
 
             mockMvc.perform(post("/api/transactions/submit")
@@ -369,9 +391,13 @@ class TransactionControllerTest {
             request.setTillId("TILL-456");
             request.setPaymentMethod("card");
 
+            TransactionResult result = createTransactionResult("TXN-001");
             TransactionResponse response = createTransactionResponse("TXN-001");
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
+                    .thenReturn(result);
+            when(transactionRequestMapper.toResponse(any(TransactionResult.class)))
                     .thenReturn(response);
 
             mockMvc.perform(post("/api/transactions/submit")
@@ -605,9 +631,13 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 200 and create sample transaction")
         void createSampleTransaction_success() throws Exception {
+            TransactionResult result = createTransactionResult("TXN-SAMPLE-001");
             TransactionResponse response = createTransactionResponse("TXN-SAMPLE-001");
 
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
+                    .thenReturn(result);
+            when(transactionRequestMapper.toResponse(any(TransactionResult.class)))
                     .thenReturn(response);
 
             mockMvc.perform(post("/api/transactions/sample"))
@@ -617,13 +647,14 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.transaction").exists())
                     .andExpect(jsonPath("$.transaction.transactionId").value("TXN-SAMPLE-001"));
 
-            verify(transactionService).processTransaction(any(TransactionRequest.class));
+            verify(transactionService).processTransaction(any(CreateTransactionCommand.class));
         }
 
         @Test
         @DisplayName("Should return 500 on service exception")
         void createSampleTransaction_serviceError() throws Exception {
-            when(transactionService.processTransaction(any(TransactionRequest.class)))
+            when(transactionRequestMapper.toCommand(any(TransactionRequest.class))).thenReturn(mock(CreateTransactionCommand.class));
+            when(transactionService.processTransaction(any(CreateTransactionCommand.class)))
                     .thenThrow(new TransactionProcessingException("Failed to create sample transaction"));
 
             mockMvc.perform(post("/api/transactions/sample"))
@@ -764,5 +795,21 @@ class TransactionControllerTest {
         response.setItems(Arrays.asList(item1, item2));
 
         return response;
+    }
+
+    private TransactionResult createTransactionResult(String transactionId) {
+        return new TransactionResult(
+                transactionId,
+                "CUST-001",
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("25.50"),
+                "GBP",
+                ZonedDateTime.now(),
+                ZonedDateTime.now(),
+                "COMPLETED",
+                null
+        );
     }
 }

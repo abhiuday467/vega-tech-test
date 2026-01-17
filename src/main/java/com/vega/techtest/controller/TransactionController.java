@@ -4,8 +4,11 @@ import com.vega.techtest.aspect.Timed;
 import com.vega.techtest.dto.TransactionItemRequest;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
+import com.vega.techtest.mapper.TransactionRequestMapper;
 import com.vega.techtest.service.TransactionService;
 import com.vega.techtest.service.TransactionMetricsService;
+import com.vega.techtest.service.command.CreateTransactionCommand;
+import com.vega.techtest.service.command.TransactionResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,22 +31,26 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final TransactionMetricsService metricsService;
+    private final TransactionRequestMapper transactionRequestMapper;
 
     @Timed("transaction_submission_duration")
     @PostMapping("/submit")
     public ResponseEntity<Map<String, Object>> submitTransaction(@Valid @RequestBody TransactionRequest request) {
         logger.info("Received transaction submission from till: {}", request.getTillId());
 
-        TransactionResponse response = transactionService.processTransaction(request);
+        CreateTransactionCommand command = transactionRequestMapper.toCommand(request);
+        TransactionResult result = transactionService.processTransaction(command);
+
+        TransactionResponse response = transactionRequestMapper.toResponse(result);
         metricsService.recordTransactionSubmission(request, response);
 
-        logger.info("Successfully processed transaction: {}", response.getTransactionId());
+        logger.info("Successfully processed transaction: {}", result.transactionId());
 
         return ResponseEntity.ok(Map.of(
                 "status", "success",
                 "message", "Transaction processed successfully",
-                "transactionId", response.getTransactionId(),
-                "timestamp", response.getTransactionTimestamp()
+                "transactionId", result.transactionId(),
+                "timestamp", result.transactionTimestamp()
         ));
     }
 
@@ -131,10 +138,13 @@ public class TransactionController {
                 new TransactionItemRequest("Coffee", "COFFEE001", new BigDecimal("3.99"), 1, "Beverages")
         ));
 
-        TransactionResponse response = transactionService.processTransaction(request);
+        CreateTransactionCommand command = transactionRequestMapper.toCommand(request);
+        TransactionResult result = transactionService.processTransaction(command);
+
+        TransactionResponse response = transactionRequestMapper.toResponse(result);
         metricsService.recordTransactionSubmission(request, response);
 
-        logger.info("Created sample transaction: {}", response.getTransactionId());
+        logger.info("Created sample transaction: {}", result.transactionId());
 
         return ResponseEntity.ok(Map.of(
                 "status", "success",

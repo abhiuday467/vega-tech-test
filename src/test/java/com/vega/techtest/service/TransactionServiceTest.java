@@ -12,6 +12,8 @@ import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.mapper.TransactionEntityMapper;
 import com.vega.techtest.repository.TransactionRepository;
+import com.vega.techtest.service.command.CreateTransactionCommand;
+import com.vega.techtest.service.command.TransactionResult;
 import com.vega.techtest.validators.TransactionValidator;
 import org.springframework.dao.DuplicateKeyException;
 import java.math.BigDecimal;
@@ -49,13 +51,17 @@ class TransactionServiceTest {
     void processTransaction_generatesIdAndSaves() {
         ZonedDateTime timestamp = ZonedDateTime.now();
 
-        TransactionRequest request = new TransactionRequest();
-        request.setCustomerId("CUST-1");
-        request.setStoreId("STORE-1");
-        request.setTillId("TILL-1");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("12.50"));
-        request.setTimestamp(timestamp);
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                null,
+                "CUST-1",
+                "STORE-1",
+                "TILL-1",
+                "card",
+                new BigDecimal("12.50"),
+                "GBP",
+                timestamp,
+                null
+        );
 
         TransactionEntity mappedEntity = new TransactionEntity(
                 null,
@@ -68,19 +74,19 @@ class TransactionServiceTest {
         mappedEntity.setCurrency("GBP");
         mappedEntity.setTransactionTimestamp(timestamp);
 
-        when(mapper.toEntity(request)).thenReturn(mappedEntity);
+        when(mapper.toEntityFromCommand(command)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        when(mapper.toResponse(any(TransactionEntity.class)))
-                .thenAnswer(invocation -> createTransactionResponse(invocation.getArgument(0)));
+        when(mapper.toResult(any(TransactionEntity.class)))
+                .thenAnswer(invocation -> createTransactionResult(invocation.getArgument(0)));
 
-        TransactionResponse response = transactionService.processTransaction(request);
+        TransactionResult result = transactionService.processTransaction(command);
 
-        assertThat(response.getTransactionId()).startsWith("TXN-");
-        assertThat(response.getStoreId()).isEqualTo("STORE-1");
-        assertThat(response.getPaymentMethod()).isEqualTo("card");
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("12.50");
-        assertThat(response.getCurrency()).isEqualTo("GBP");
+        assertThat(result.transactionId()).startsWith("TXN-");
+        assertThat(result.storeId()).isEqualTo("STORE-1");
+        assertThat(result.paymentMethod()).isEqualTo("card");
+        assertThat(result.totalAmount()).isEqualByComparingTo("12.50");
+        assertThat(result.currency()).isEqualTo("GBP");
 
         verify(transactionRepository).save(any(TransactionEntity.class));
     }
@@ -90,13 +96,17 @@ class TransactionServiceTest {
     void processTransaction_returnsExistingForDuplicateId() {
         ZonedDateTime timestamp = ZonedDateTime.now();
 
-        TransactionRequest request = new TransactionRequest();
-        request.setTransactionId("TXN-EXIST");
-        request.setStoreId("STORE-1");
-        request.setTillId("TILL-1");
-        request.setPaymentMethod("cash");
-        request.setTotalAmount(new BigDecimal("9.99"));
-        request.setTimestamp(timestamp);
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                "TXN-EXIST",
+                null,
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                new BigDecimal("9.99"),
+                "GBP",
+                timestamp,
+                null
+        );
 
         TransactionEntity mappedEntity = new TransactionEntity(
                 null,
@@ -120,18 +130,18 @@ class TransactionServiceTest {
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
 
-        when(mapper.toEntity(request)).thenReturn(mappedEntity);
+        when(mapper.toEntityFromCommand(command)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenThrow(new DuplicateKeyException("Duplicate key"));
         when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
                 .thenReturn(existingEntity);
-        when(mapper.toResponse(existingEntity)).thenReturn(createTransactionResponse(existingEntity));
+        when(mapper.toResult(existingEntity)).thenReturn(createTransactionResult(existingEntity));
 
-        TransactionResponse response = transactionService.processTransaction(request);
+        TransactionResult result = transactionService.processTransaction(command);
 
-        assertThat(response.getTransactionId()).isEqualTo("TXN-EXIST");
-        assertThat(response.getStoreId()).isEqualTo("STORE-1");
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
+        assertThat(result.transactionId()).isEqualTo("TXN-EXIST");
+        assertThat(result.storeId()).isEqualTo("STORE-1");
+        assertThat(result.totalAmount()).isEqualByComparingTo("9.99");
 
         verify(transactionRepository).save(any(TransactionEntity.class));
         verify(transactionRepository).findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp);
@@ -142,12 +152,17 @@ class TransactionServiceTest {
     void processTransaction_handlesDuplicateKeyException() {
         ZonedDateTime timestamp = ZonedDateTime.now();
 
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-1");
-        request.setTillId("TILL-1");
-        request.setTimestamp(timestamp);
-        request.setPaymentMethod("cash");
-        request.setTotalAmount(new BigDecimal("9.99"));
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                null,
+                null,
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                new BigDecimal("9.99"),
+                "GBP",
+                timestamp,
+                null
+        );
 
         TransactionEntity mappedEntity = new TransactionEntity(
                 null,
@@ -171,19 +186,19 @@ class TransactionServiceTest {
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
 
-        when(mapper.toEntity(request)).thenReturn(mappedEntity);
+        when(mapper.toEntityFromCommand(command)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenThrow(new DuplicateKeyException("Duplicate key"));
         when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
                 .thenReturn(existingEntity);
-        when(mapper.toResponse(existingEntity)).thenReturn(createTransactionResponse(existingEntity));
+        when(mapper.toResult(existingEntity)).thenReturn(createTransactionResult(existingEntity));
 
-        TransactionResponse response = transactionService.processTransaction(request);
+        TransactionResult result = transactionService.processTransaction(command);
 
-        assertThat(response.getTransactionId()).isEqualTo("TXN-EXISTING");
-        assertThat(response.getStoreId()).isEqualTo("STORE-1");
-        assertThat(response.getTillId()).isEqualTo("TILL-1");
-        assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
+        assertThat(result.transactionId()).isEqualTo("TXN-EXISTING");
+        assertThat(result.storeId()).isEqualTo("STORE-1");
+        assertThat(result.tillId()).isEqualTo("TILL-1");
+        assertThat(result.totalAmount()).isEqualByComparingTo("9.99");
 
         verify(transactionRepository).save(any(TransactionEntity.class));
         verify(transactionRepository).findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp);
@@ -359,5 +374,21 @@ class TransactionServiceTest {
             responses.add(createTransactionResponse(entity));
         }
         return responses;
+    }
+
+    private TransactionResult createTransactionResult(TransactionEntity entity) {
+        return new TransactionResult(
+                entity.getTransactionId(),
+                entity.getCustomerId(),
+                entity.getStoreId(),
+                entity.getTillId(),
+                entity.getPaymentMethod(),
+                entity.getTotalAmount(),
+                entity.getCurrency(),
+                entity.getTransactionTimestamp(),
+                entity.getCreatedAt(),
+                entity.getStatus(),
+                null
+        );
     }
 }

@@ -10,6 +10,8 @@ import com.vega.techtest.exception.TransactionProcessingException;
 import com.vega.techtest.exception.TransactionRetrievalException;
 import com.vega.techtest.mapper.TransactionEntityMapper;
 import com.vega.techtest.repository.TransactionRepository;
+import com.vega.techtest.service.command.CreateTransactionCommand;
+import com.vega.techtest.service.command.TransactionResult;
 import com.vega.techtest.validators.TransactionValidator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -35,21 +37,21 @@ public class TransactionService {
     private final TransactionEntityMapper mapper;
 
     @Transactional
-    public TransactionResponse processTransaction(TransactionRequest request) {
+    public TransactionResult processTransaction(CreateTransactionCommand command) {
         try {
-            logger.info("Processing transaction request: {}", request.getTransactionId());
-            validator.validateTransactionRequest(request);
+            logger.info("Processing transaction from store: {}, till: {}, at: {}",
+                command.storeId(), command.tillId(), command.timestamp());
+            validator.validateTransactionCommand(command);
 
-            String transactionId = request.getTransactionId();
+            String transactionId = command.transactionId();
             if (transactionId == null || transactionId.trim().isEmpty()) {
                 transactionId = generateTransactionId();
-                request.setTransactionId(transactionId);
             }
-            TransactionEntity transaction = mapper.toEntity(request);
+            TransactionEntity transaction = mapper.toEntityFromCommand(command);
             transaction.setTransactionId(transactionId);
 
-            if (request.getItems() != null && !request.getItems().isEmpty()) {
-                List<TransactionItemEntity> items = mapper.toItemEntityList(request.getItems());
+            if (command.items() != null && !command.items().isEmpty()) {
+                List<TransactionItemEntity> items = mapper.toItemEntityListFromCommand(command.items());
                 items.forEach(item -> item.setTransaction(transaction));
                 transaction.setItems(items);
             }
@@ -57,26 +59,26 @@ public class TransactionService {
             TransactionEntity savedTransaction = transactionRepository.save(transaction);
             logger.info("Successfully saved transaction: {}", transactionId);
 
-            return mapper.toResponse(savedTransaction);
+            return mapper.toResult(savedTransaction);
         } catch (DuplicateKeyException e) {
-           return  getDuplicateTransaction(request);
+           return getDuplicateTransaction(command);
         } catch (Exception e) {
             throw new TransactionProcessingException("Failed to process transaction", e);
         }
     }
 
-    private TransactionResponse getDuplicateTransaction(TransactionRequest request) {
+    private TransactionResult getDuplicateTransaction(CreateTransactionCommand command) {
         TransactionEntity existingTransaction = transactionRepository
                 .findByStoreIdAndTillIdAndTransactionTimestamp(
-                        request.getStoreId(),
-                        request.getTillId(),
-                        request.getTimestamp()
+                        command.storeId(),
+                        command.tillId(),
+                        command.timestamp()
                 );
             logger.warn("Duplicate transaction detected - Timestamp: {}, StoreId: {}, TillId: {}. " +
                             "Returning existing transaction: {}",
-                    request.getTimestamp(), request.getStoreId(), request.getTillId(),
+                    command.timestamp(), command.storeId(), command.tillId(),
                     existingTransaction.getTransactionId());
-            return mapper.toResponse(existingTransaction);
+            return mapper.toResult(existingTransaction);
     }
 
     public TransactionResponse getTransactionById(String transactionId) {
