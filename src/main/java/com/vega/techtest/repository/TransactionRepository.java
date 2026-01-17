@@ -32,8 +32,5 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     //TODO Remove any index for countTransactionsByStore
     //TODO Remove any index for getTotalSalesByStore
 
-    boolean existsByTransactionId(String transactionId);
-
-    Optional<TransactionEntity> findByTransactionTimestampAndStoreIdAndTillId(
-            ZonedDateTime timestamp, String storeId, String tillId);
+    TransactionEntity findByStoreIdAndTillIdAndTransactionTimestamp(String storeId, String tillId,ZonedDateTime timestamp);
 }

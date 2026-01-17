@@ -4,4 +4,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/002-sample-data.yaml
   - include:
-      file: db/changelog/003-add-composite-index-idempotency.yaml 
+      file: db/changelog/003-add-composite-index-idempotency.yaml
+  - include:
+      file: db/changelog/004-fix-composite-index-and-add-unique-constraint.yaml 

@@ -13,6 +13,7 @@ import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.validators.TransactionValidator;
+import org.springframework.dao.DuplicateKeyException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -54,9 +55,6 @@ class TransactionServiceTest {
         request.setTotalAmount(new BigDecimal("12.50"));
         request.setTimestamp(timestamp);
 
-        when(transactionRepository.findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1"))
-                .thenReturn(Optional.empty());
-        when(transactionRepository.findByTransactionId(any())).thenReturn(Optional.empty());
         when(transactionRepository.save(any(TransactionEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -68,9 +66,7 @@ class TransactionServiceTest {
         assertThat(response.getTotalAmount()).isEqualByComparingTo("12.50");
         assertThat(response.getCurrency()).isEqualTo("GBP");
 
-        ArgumentCaptor<String> idCaptor = ArgumentCaptor.forClass(String.class);
-        verify(transactionRepository).findByTransactionId(idCaptor.capture());
-        assertThat(idCaptor.getValue()).isEqualTo(response.getTransactionId());
+        verify(transactionRepository).save(any(TransactionEntity.class));
     }
 
     @Test
@@ -97,8 +93,6 @@ class TransactionServiceTest {
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
 
-        when(transactionRepository.findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1"))
-                .thenReturn(Optional.empty());
         when(transactionRepository.findByTransactionId("TXN-EXIST")).thenReturn(Optional.of(existingEntity));
 
         TransactionResponse response = transactionService.processTransaction(request);
@@ -112,8 +106,8 @@ class TransactionServiceTest {
     }
 
     @Test
-    @DisplayName("Should return existing transaction for duplicate storeId, tillId, and timestamp (idempotent)")
-    void processTransaction_returnsExistingForDuplicateComposite() {
+    @DisplayName("Should return existing transaction when DuplicateKeyException occurs")
+    void processTransaction_handlesDuplicateKeyException() {
         ZonedDateTime timestamp = ZonedDateTime.now();
 
         TransactionRequest request = new TransactionRequest();
@@ -134,8 +128,10 @@ class TransactionServiceTest {
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
 
-        when(transactionRepository.findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1"))
-                .thenReturn(Optional.of(existingEntity));
+        when(transactionRepository.save(any(TransactionEntity.class)))
+                .thenThrow(new DuplicateKeyException("Duplicate key"));
+        when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
+                .thenReturn(existingEntity);
 
         TransactionResponse response = transactionService.processTransaction(request);
 
@@ -144,8 +140,8 @@ class TransactionServiceTest {
         assertThat(response.getTillId()).isEqualTo("TILL-1");
         assertThat(response.getTotalAmount()).isEqualByComparingTo("9.99");
 
-        verify(transactionRepository).findByTransactionTimestampAndStoreIdAndTillId(timestamp, "STORE-1", "TILL-1");
-        verify(transactionRepository, never()).save(any(TransactionEntity.class));
+        verify(transactionRepository).save(any(TransactionEntity.class));
+        verify(transactionRepository).findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp);
     }
 
     @Nested

@@ -14,6 +14,7 @@ import com.vega.techtest.validators.TransactionValidator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,14 +40,9 @@ public class TransactionService {
             logger.info("Processing transaction request: {}", request.getTransactionId());
             validator.validateTransactionRequest(request);
 
-            Optional<TransactionResponse> duplicateTransaction = checkIdempotency(request);
-            if (duplicateTransaction.isPresent()) {
-                return duplicateTransaction.get();
-            }
-
             String transactionId = request.getTransactionId();
             if (transactionId == null || transactionId.trim().isEmpty()) {
-                transactionId = generateUniqueTransactionId();
+                transactionId = generateTransactionId();
                 request.setTransactionId(transactionId);
             } else {
                 Optional<TransactionEntity> existingTransaction = transactionRepository.findByTransactionId(transactionId);
@@ -54,10 +50,6 @@ public class TransactionService {
                     logger.info("Transaction {} already exists, returning existing transaction", transactionId);
                     return convertToResponse(existingTransaction.get());
                 }
-            }
-
-            if (request.getTimestamp() == null) {
-                request.setTimestamp(ZonedDateTime.now());
             }
 
             TransactionEntity transaction = new TransactionEntity(
@@ -93,29 +85,26 @@ public class TransactionService {
             return convertToResponse(savedTransaction);
         } catch (IllegalArgumentException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (DuplicateKeyException e) {
+           return  getDuplicateTransaction(request);
+        }
+        catch (Exception e) {
             throw new TransactionProcessingException("Failed to process transaction", e);
         }
     }
 
-    private Optional<TransactionResponse> checkIdempotency(TransactionRequest request) {
-        Optional<TransactionEntity> existingTransaction = transactionRepository
-                .findByTransactionTimestampAndStoreIdAndTillId(
-                        request.getTimestamp(),
+    private TransactionResponse getDuplicateTransaction(TransactionRequest request) {
+        TransactionEntity existingTransaction = transactionRepository
+                .findByStoreIdAndTillIdAndTransactionTimestamp(
                         request.getStoreId(),
-                        request.getTillId()
+                        request.getTillId(),
+                        request.getTimestamp()
                 );
-
-        if (existingTransaction.isPresent()) {
-            TransactionEntity entity = existingTransaction.get();
             logger.warn("Duplicate transaction detected - Timestamp: {}, StoreId: {}, TillId: {}. " +
                             "Returning existing transaction: {}",
                     request.getTimestamp(), request.getStoreId(), request.getTillId(),
-                    entity.getTransactionId());
-            return Optional.of(convertToResponse(entity));
-        }
-
-        return Optional.empty();
+                    existingTransaction.getTransactionId());
+            return convertToResponse(existingTransaction);
     }
 
     public TransactionResponse getTransactionById(String transactionId) {
@@ -218,19 +207,9 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    //TODO Are we allowed to change the since the column might be already in production so we have to deal with it?
     private String generateTransactionId() {
-        return "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return "TXN-" + UUID.randomUUID().toString().toUpperCase();
     }
-
-    private String generateUniqueTransactionId() {
-        String transactionId = generateTransactionId();
-        while (transactionRepository.findByTransactionId(transactionId).isPresent()) {
-            transactionId = generateTransactionId();
-        }
-        return transactionId;
-    }
-
 
     private TransactionResponse convertToResponse(TransactionEntity entity) {
         TransactionResponse response = new TransactionResponse(
