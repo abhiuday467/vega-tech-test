@@ -8,7 +8,7 @@ import com.vega.techtest.exception.ResourceNotFoundException;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.exception.TransactionProcessingException;
 import com.vega.techtest.exception.TransactionRetrievalException;
-import com.vega.techtest.mapper.TransactionMapper;
+import com.vega.techtest.mapper.TransactionEntityMapper;
 import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.validators.TransactionValidator;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final TransactionValidator validator;
-    private final TransactionMapper mapper;
+    private final TransactionEntityMapper mapper;
 
     @Transactional
     public TransactionResponse processTransaction(TransactionRequest request) {

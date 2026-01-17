@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface TransactionMapper {
+public interface TransactionEntityMapper {
 
     TransactionResponse toResponse(TransactionEntity entity);
     List<TransactionResponse> toResponseList(List<TransactionEntity> entities);

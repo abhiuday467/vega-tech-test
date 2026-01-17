@@ -3,7 +3,6 @@ package com.vega.techtest.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,7 +10,7 @@ import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.exception.StatisticsCalculationException;
-import com.vega.techtest.mapper.TransactionMapper;
+import com.vega.techtest.mapper.TransactionEntityMapper;
 import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.validators.TransactionValidator;
 import org.springframework.dao.DuplicateKeyException;
@@ -21,12 +20,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,7 +39,7 @@ class TransactionServiceTest {
     private TransactionValidator validator;
 
     @Mock
-    private TransactionMapper mapper;
+    private TransactionEntityMapper mapper;
 
     @InjectMocks
     private TransactionService transactionService;
