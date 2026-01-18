@@ -39,6 +39,23 @@ public class DuplicateTransactionHandler {
                         command.timestamp()
                 );
 
+        // If null, the constraint violation was on transaction_id, not (store, till, timestamp)
+        if (existingTransaction == null) {
+            String message = String.format(
+                    "Database constraint violation occurred but no transaction found with StoreId=%s, TillId=%s, Timestamp=%s. " +
+                    "This indicates a duplicate transaction_id (%s) with different business data. " +
+                    "Possible causes: (1) Same transactionId sent from different stores/tills, " +
+                    "(2) Race condition where transaction not yet committed, " +
+                    "(3) Transaction rolled back after constraint check.",
+                    command.storeId(),
+                    command.tillId(),
+                    command.timestamp(),
+                    command.transactionId()
+            );
+            logger.error(message);
+            throw new IllegalStateException(message);
+        }
+
         List<String> differences = findDifferences(command, existingTransaction);
         if (!differences.isEmpty()) {
             String message = String.format(

@@ -1,6 +1,7 @@
 package com.vega.techtest.adapter.in.messaging.kafka.consumer;
 
 import com.vega.techtest.adapter.in.messaging.kafka.dto.KafkaTransactionEvent;
+import com.vega.techtest.adapter.in.messaging.kafka.exception.DuplicateEventException;
 import com.vega.techtest.adapter.in.messaging.kafka.service.DeadLetterQueuePublisher;
 import com.vega.techtest.adapter.in.messaging.kafka.service.KafkaMessageProcessor;
 import com.vega.techtest.application.transaction.command.TransactionResult;
@@ -45,6 +46,13 @@ public class TransactionKafkaConsumer {
 
             log.info("Successfully processed and acknowledged event: {} -> transaction: {}",
                     event.eventId(), result.transactionId());
+
+        } catch (DuplicateEventException e) {
+            log.info("Duplicate event detected for event: {} - Acknowledging without processing", event.eventId());
+
+            if (acknowledgment != null) {
+                acknowledgment.acknowledge();
+            }
 
         } catch (IllegalArgumentException e) {
             log.error("Validation error for event: {} - Sent to DLQ. Reason: {}",

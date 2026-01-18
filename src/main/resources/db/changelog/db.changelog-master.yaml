@@ -6,4 +6,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/003-add-composite-index-idempotency.yaml
   - include:
-      file: db/changelog/004-fix-composite-index-and-add-unique-constraint.yaml 
+      file: db/changelog/004-fix-composite-index-and-add-unique-constraint.yaml
+  - include:
+      file: db/changelog/005-processed-kafka-events-schema.yaml 
