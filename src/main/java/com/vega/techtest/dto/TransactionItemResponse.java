@@ -1,32 +1,42 @@
 package com.vega.techtest.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
+import java.beans.ConstructorProperties;
 
 public class TransactionItemResponse {
 
-    private String productName;
-    private String productCode;
-    private BigDecimal unitPrice;
-    private Integer quantity;
-    private BigDecimal totalPrice;
-    private String category;
+    private final String productName;
+    private final String productCode;
+    private final BigDecimal unitPrice;
+    private final Integer quantity;
+    private final BigDecimal totalPrice;
+    private final String category;
 
-    public TransactionItemResponse() {
-    }
-
-    public TransactionItemResponse(String productName, String productCode,
-                                   BigDecimal unitPrice, Integer quantity, BigDecimal totalPrice) {
+    @JsonCreator
+    @ConstructorProperties({
+            "productName",
+            "productCode",
+            "unitPrice",
+            "quantity",
+            "totalPrice",
+            "category"
+    })
+    public TransactionItemResponse(
+            @JsonProperty("productName") String productName,
+            @JsonProperty("productCode") String productCode,
+            @JsonProperty("unitPrice") BigDecimal unitPrice,
+            @JsonProperty("quantity") Integer quantity,
+            @JsonProperty("totalPrice") BigDecimal totalPrice,
+            @JsonProperty("category") String category
+    ) {
         this.productName = productName;
         this.productCode = productCode;
         this.unitPrice = unitPrice;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
-    }
-
-    public TransactionItemResponse(String productName, String productCode,
-                                   BigDecimal unitPrice, Integer quantity, BigDecimal totalPrice,
-                                   String category) {
-        this(productName, productCode, unitPrice, quantity, totalPrice);
         this.category = category;
     }
 
@@ -34,47 +44,23 @@ public class TransactionItemResponse {
         return productName;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
     public String getProductCode() {
         return productCode;
-    }
-
-    public void setProductCode(String productCode) {
-        this.productCode = productCode;
     }
 
     public BigDecimal getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(BigDecimal unitPrice) {
-        this.unitPrice = unitPrice;
-    }
-
     public Integer getQuantity() {
         return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
     }
 
     public BigDecimal getTotalPrice() {
         return totalPrice;
     }
 
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-
     public String getCategory() {
         return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 }

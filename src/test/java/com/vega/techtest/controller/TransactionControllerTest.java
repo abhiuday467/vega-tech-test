@@ -151,6 +151,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 400 when totalAmount is zero")
         void submitTransaction_zeroAmount() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "STORE-001",
                     "TILL-001",
@@ -174,6 +175,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 400 when totalAmount is negative")
         void submitTransaction_negativeAmount() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "STORE-001",
                     "TILL-001",
@@ -197,6 +199,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 400 when storeId is blank")
         void submitTransaction_blankStoreId() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "",
                     "TILL-001",
@@ -220,6 +223,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 400 when paymentMethod is blank")
         void submitTransaction_blankPaymentMethod() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "STORE-001",
                     "TILL-001",
@@ -243,6 +247,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 400 when storeId is missing")
         void submitTransaction_missingStoreId() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     null,
                     "TILL-001",
@@ -266,6 +271,7 @@ class TransactionControllerTest {
         @DisplayName("Should return 400 when paymentMethod is missing")
         void submitTransaction_missingPaymentMethod() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "STORE-001",
                     "TILL-001",
@@ -307,8 +313,15 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return same transaction for duplicate submission (idempotent)")
         void submitTransaction_idempotentBehavior() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setTransactionId("TXN-001");
+            TransactionRequest request = createRequest(
+                    "TXN-001",
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("5.50"),
+                    ZonedDateTime.now()
+            );
 
             TransactionResult result = createTransactionResult("TXN-001");
             TransactionResponse response = createTransactionResponse("TXN-001");
@@ -345,6 +358,7 @@ class TransactionControllerTest {
             ZonedDateTime timestamp = ZonedDateTime.now();
 
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "STORE-001",
                     "TILL-001",
@@ -430,6 +444,7 @@ class TransactionControllerTest {
         @DisplayName("Should record metrics with correct tags for store, till, and payment method")
         void submitTransaction_recordsMetricsWithTags() throws Exception {
             TransactionRequest request = createRequest(
+                    null,
                     "CUST-001",
                     "STORE-123",
                     "TILL-456",
@@ -823,30 +838,20 @@ class TransactionControllerTest {
     }
 
     private TransactionRequest createValidTransactionRequest() {
-        TransactionItemRequest item1 = new TransactionItemRequest(
-                "Apple", "APPLE-001", new BigDecimal("1.50"), 2, "Fruit"
-        );
-        TransactionItemRequest item2 = new TransactionItemRequest(
-                "Milk", "MILK-001", new BigDecimal("2.50"), 1, "Dairy"
-        );
-        List<TransactionItemRequest> items = Arrays.asList(item1, item2);
-
-        return new TransactionRequest(
+        return createRequest(
                 null,
                 "CUST-001",
                 "STORE-001",
                 "TILL-001",
                 "card",
                 new BigDecimal("5.50"),
-                "GBP",
-                ZonedDateTime.now(),
-                items
+                ZonedDateTime.now()
         );
     }
 
-    private TransactionRequest createRequest(String customerId, String storeId, String tillId,
-                                             String paymentMethod, BigDecimal totalAmount,
-                                             ZonedDateTime timestamp) {
+    private TransactionRequest createRequest(String transactionId, String customerId, String storeId,
+                                             String tillId, String paymentMethod,
+                                             BigDecimal totalAmount, ZonedDateTime timestamp) {
         TransactionItemRequest item1 = new TransactionItemRequest(
                 "Apple", "APPLE-001", new BigDecimal("1.50"), 2, "Fruit"
         );
@@ -856,7 +861,7 @@ class TransactionControllerTest {
         List<TransactionItemRequest> items = Arrays.asList(item1, item2);
 
         return new TransactionRequest(
-                null,
+                transactionId,
                 customerId,
                 storeId,
                 tillId,
@@ -873,7 +878,15 @@ class TransactionControllerTest {
     }
 
     private TransactionResponse createTransactionResponseWithAmount(String transactionId, BigDecimal amount) {
-        TransactionResponse response = new TransactionResponse(
+        TransactionItemResponse item1 = new TransactionItemResponse(
+                "Apple", "APPLE-001", new BigDecimal("1.50"), 2, new BigDecimal("3.00"), "Fruit"
+        );
+        TransactionItemResponse item2 = new TransactionItemResponse(
+                "Milk", "MILK-001", new BigDecimal("2.50"), 1, new BigDecimal("2.50"), "Dairy"
+        );
+        List<TransactionItemResponse> items = Arrays.asList(item1, item2);
+
+        return new TransactionResponse(
                 transactionId,
                 "CUST-001",
                 "STORE-001",
@@ -882,18 +895,10 @@ class TransactionControllerTest {
                 amount,
                 "GBP",
                 ZonedDateTime.now(),
-                "COMPLETED"
+                ZonedDateTime.now(),
+                "COMPLETED",
+                items
         );
-
-        TransactionItemResponse item1 = new TransactionItemResponse(
-                "Apple", "APPLE-001", new BigDecimal("1.50"), 2, new BigDecimal("3.00"), "Fruit"
-        );
-        TransactionItemResponse item2 = new TransactionItemResponse(
-                "Milk", "MILK-001", new BigDecimal("2.50"), 1, new BigDecimal("2.50"), "Dairy"
-        );
-        response.setItems(Arrays.asList(item1, item2));
-
-        return response;
     }
 
     private TransactionResult createTransactionResult(String transactionId) {

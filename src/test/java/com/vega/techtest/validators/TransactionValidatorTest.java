@@ -208,10 +208,13 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw ReceiptTotalMismatchException when calculated total doesn't match provided total")
     void validateTransactionRequest_totalMismatch() {
-        TransactionItemRequest item = new TransactionItemRequest();
-        item.setProductName("Apple");
-        item.setUnitPrice(new BigDecimal("5.00"));
-        item.setQuantity(2);
+        TransactionItemRequest item = new TransactionItemRequest(
+                "Apple",
+                null,
+                new BigDecimal("5.00"),
+                2,
+                null
+        );
         TransactionRequest request = buildRequest(
                 "STORE-001",
                 "TILL-001",
@@ -248,10 +251,13 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item unitPrice is null")
     void validateTransactionRequest_nullItemUnitPrice() {
-        TransactionItemRequest item = new TransactionItemRequest();
-        item.setProductName("Apple");
-        item.setUnitPrice(null);
-        item.setQuantity(2);
+        TransactionItemRequest item = new TransactionItemRequest(
+                "Apple",
+                null,
+                null,
+                2,
+                null
+        );
         TransactionRequest request = buildRequest(
                 "STORE-001",
                 "TILL-001",
@@ -269,10 +275,13 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item unitPrice is negative")
     void validateTransactionRequest_negativeItemUnitPrice() {
-        TransactionItemRequest item = new TransactionItemRequest();
-        item.setProductName("Apple");
-        item.setUnitPrice(new BigDecimal("-5.00"));
-        item.setQuantity(2);
+        TransactionItemRequest item = new TransactionItemRequest(
+                "Apple",
+                null,
+                new BigDecimal("-5.00"),
+                2,
+                null
+        );
         TransactionRequest request = buildRequest(
                 "STORE-001",
                 "TILL-001",
@@ -290,10 +299,13 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item quantity is null")
     void validateTransactionRequest_nullItemQuantity() {
-        TransactionItemRequest item = new TransactionItemRequest();
-        item.setProductName("Apple");
-        item.setUnitPrice(new BigDecimal("5.00"));
-        item.setQuantity(null);
+        TransactionItemRequest item = new TransactionItemRequest(
+                "Apple",
+                null,
+                new BigDecimal("5.00"),
+                null,
+                null
+        );
         TransactionRequest request = buildRequest(
                 "STORE-001",
                 "TILL-001",
@@ -311,10 +323,13 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item quantity is zero")
     void validateTransactionRequest_zeroItemQuantity() {
-        TransactionItemRequest item = new TransactionItemRequest();
-        item.setProductName("Apple");
-        item.setUnitPrice(new BigDecimal("5.00"));
-        item.setQuantity(0);
+        TransactionItemRequest item = new TransactionItemRequest(
+                "Apple",
+                null,
+                new BigDecimal("5.00"),
+                0,
+                null
+        );
         TransactionRequest request = buildRequest(
                 "STORE-001",
                 "TILL-001",
@@ -332,10 +347,13 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item quantity is negative")
     void validateTransactionRequest_negativeItemQuantity() {
-        TransactionItemRequest item = new TransactionItemRequest();
-        item.setProductName("Apple");
-        item.setUnitPrice(new BigDecimal("5.00"));
-        item.setQuantity(-1);
+        TransactionItemRequest item = new TransactionItemRequest(
+                "Apple",
+                null,
+                new BigDecimal("5.00"),
+                -1,
+                null
+        );
         TransactionRequest request = buildRequest(
                 "STORE-001",
                 "TILL-001",

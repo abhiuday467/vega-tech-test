@@ -1,10 +1,12 @@
 package com.vega.techtest.mapper;
 
 import com.vega.techtest.dto.TransactionItemRequest;
+import com.vega.techtest.dto.TransactionItemResponse;
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.service.command.CreateTransactionCommand;
 import com.vega.techtest.service.command.TransactionItem;
+import com.vega.techtest.service.command.TransactionItemResult;
 import com.vega.techtest.service.command.TransactionResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -29,6 +31,10 @@ public interface TransactionRequestMapper {
     TransactionResponse toResponse(TransactionResult result);
 
     List<TransactionResponse> toResponseList(List<TransactionResult> results);
+
+    TransactionItemResponse toItemResponse(TransactionItemResult item);
+
+    List<TransactionItemResponse> toItemResponseList(List<TransactionItemResult> items);
 
     @Named("toUtc")
     default ZonedDateTime toUtc(ZonedDateTime timestamp) {

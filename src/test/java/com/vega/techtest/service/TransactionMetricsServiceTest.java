@@ -33,11 +33,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should record all metrics when transaction is submitted")
     void recordTransactionSubmission_recordsAllMetrics() {
         TransactionRequest request = createRequest("STORE-001", "TILL-001", "card");
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(new BigDecimal("99.99"));
-        response.setItems(createItemList(3));
+        TransactionResponse response = createResponse(new BigDecimal("99.99"), createItemList(3));
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -78,11 +74,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should handle null total amount gracefully")
     void recordTransactionSubmission_nullTotalAmount() {
         TransactionRequest request = createRequest("STORE-001", "TILL-001", "card");
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(null);
-        response.setItems(createItemList(2));
+        TransactionResponse response = createResponse(null, createItemList(2));
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -99,11 +91,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should handle null items gracefully")
     void recordTransactionSubmission_nullItems() {
         TransactionRequest request = createRequest("STORE-001", "TILL-001", "card");
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(new BigDecimal("50.00"));
-        response.setItems(null);
+        TransactionResponse response = createResponse(new BigDecimal("50.00"), null);
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -120,11 +108,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should handle null store ID gracefully")
     void recordTransactionSubmission_nullStoreId() {
         TransactionRequest request = createRequest(null, "TILL-001", "card");
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(new BigDecimal("50.00"));
-        response.setItems(createItemList(1));
+        TransactionResponse response = createResponse(new BigDecimal("50.00"), createItemList(1));
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -140,11 +124,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should handle null till ID gracefully")
     void recordTransactionSubmission_nullTillId() {
         TransactionRequest request = createRequest("STORE-001", null, "card");
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(new BigDecimal("50.00"));
-        response.setItems(createItemList(1));
+        TransactionResponse response = createResponse(new BigDecimal("50.00"), createItemList(1));
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -160,11 +140,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should handle null payment method gracefully")
     void recordTransactionSubmission_nullPaymentMethod() {
         TransactionRequest request = createRequest("STORE-001", "TILL-001", null);
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(new BigDecimal("50.00"));
-        response.setItems(createItemList(1));
+        TransactionResponse response = createResponse(new BigDecimal("50.00"), createItemList(1));
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -190,11 +166,7 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should handle empty items list")
     void recordTransactionSubmission_emptyItems() {
         TransactionRequest request = createRequest("STORE-001", "TILL-001", "cash");
-
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId("TXN-123");
-        response.setTotalAmount(new BigDecimal("25.00"));
-        response.setItems(new ArrayList<>());
+        TransactionResponse response = createResponse(new BigDecimal("25.00"), new ArrayList<>());
 
         metricsService.recordTransactionSubmission(request, response);
 
@@ -211,18 +183,10 @@ class TransactionMetricsServiceTest {
     @DisplayName("Should record multiple submissions correctly")
     void recordTransactionSubmission_multipleSubmissions() {
         TransactionRequest request1 = createRequest("STORE-001", "TILL-001", "card");
-
-        TransactionResponse response1 = new TransactionResponse();
-        response1.setTransactionId("TXN-123");
-        response1.setTotalAmount(new BigDecimal("50.00"));
-        response1.setItems(createItemList(2));
+        TransactionResponse response1 = createResponse(new BigDecimal("50.00"), createItemList(2));
 
         TransactionRequest request2 = createRequest("STORE-002", "TILL-002", "cash");
-
-        TransactionResponse response2 = new TransactionResponse();
-        response2.setTransactionId("TXN-124");
-        response2.setTotalAmount(new BigDecimal("75.00"));
-        response2.setItems(createItemList(3));
+        TransactionResponse response2 = createResponse(new BigDecimal("75.00"), createItemList(3));
 
         metricsService.recordTransactionSubmission(request1, response1);
         metricsService.recordTransactionSubmission(request2, response2);
@@ -240,10 +204,14 @@ class TransactionMetricsServiceTest {
     private List<TransactionItemResponse> createItemList(int count) {
         List<TransactionItemResponse> items = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            TransactionItemResponse item = new TransactionItemResponse();
-            item.setProductName("Product-" + i);
-            item.setUnitPrice(new BigDecimal("10.00"));
-            item.setQuantity(1);
+            TransactionItemResponse item = new TransactionItemResponse(
+                    "Product-" + i,
+                    "PROD-" + i,
+                    new BigDecimal("10.00"),
+                    1,
+                    new BigDecimal("10.00"),
+                    null
+            );
             items.add(item);
         }
         return items;
@@ -260,6 +228,22 @@ class TransactionMetricsServiceTest {
                 "GBP",
                 ZonedDateTime.now(),
                 null
+        );
+    }
+
+    private TransactionResponse createResponse(BigDecimal totalAmount, List<TransactionItemResponse> items) {
+        return new TransactionResponse(
+                "TXN-123",
+                "CUST-001",
+                "STORE-001",
+                "TILL-001",
+                "card",
+                totalAmount,
+                "GBP",
+                ZonedDateTime.now(),
+                ZonedDateTime.now(),
+                "COMPLETED",
+                items
         );
     }
 }

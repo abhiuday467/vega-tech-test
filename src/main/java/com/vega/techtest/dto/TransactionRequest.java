@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -17,8 +16,7 @@ import java.util.List;
 @Getter
 public class TransactionRequest {
 
-    @Setter
-    private String transactionId;
+    private final String transactionId;
     private final String customerId;
 
     @NotBlank(message = "Store ID is required")

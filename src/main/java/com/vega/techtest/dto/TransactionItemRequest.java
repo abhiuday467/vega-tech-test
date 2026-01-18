@@ -1,69 +1,55 @@
 package com.vega.techtest.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
 
 public class TransactionItemRequest {
 
-    private String productName;
-    private String productCode;
-    private BigDecimal unitPrice;
-    private Integer quantity;
-    private String category;
+    private final String productName;
+    private final String productCode;
+    private final BigDecimal unitPrice;
+    private final Integer quantity;
+    private final String category;
 
-    public TransactionItemRequest() {
-    }
-
-    public TransactionItemRequest(String productName, String productCode,
-                                  BigDecimal unitPrice, Integer quantity) {
+    @JsonCreator
+    public TransactionItemRequest(
+            @JsonProperty("productName") String productName,
+            @JsonProperty("productCode") String productCode,
+            @JsonProperty("unitPrice") BigDecimal unitPrice,
+            @JsonProperty("quantity") Integer quantity,
+            @JsonProperty("category") String category
+    ) {
         this.productName = productName;
         this.productCode = productCode;
         this.unitPrice = unitPrice;
         this.quantity = quantity;
+        this.category = category;
     }
 
     public TransactionItemRequest(String productName, String productCode,
-                                  BigDecimal unitPrice, Integer quantity, String category) {
-        this(productName, productCode, unitPrice, quantity);
-        this.category = category;
+                                  BigDecimal unitPrice, Integer quantity) {
+        this(productName, productCode, unitPrice, quantity, null);
     }
 
     public String getProductName() {
         return productName;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
     public String getProductCode() {
         return productCode;
-    }
-
-    public void setProductCode(String productCode) {
-        this.productCode = productCode;
     }
 
     public BigDecimal getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(BigDecimal unitPrice) {
-        this.unitPrice = unitPrice;
-    }
-
     public Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
     public String getCategory() {
         return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 }
