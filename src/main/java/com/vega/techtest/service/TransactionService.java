@@ -2,10 +2,7 @@ package com.vega.techtest.service;
 
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.entity.TransactionItemEntity;
-import com.vega.techtest.exception.ResourceNotFoundException;
-import com.vega.techtest.exception.StatisticsCalculationException;
-import com.vega.techtest.exception.TransactionProcessingException;
-import com.vega.techtest.exception.TransactionRetrievalException;
+import com.vega.techtest.exception.*;
 import com.vega.techtest.mapper.TransactionEntityMapper;
 import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.service.command.CreateTransactionCommand;
@@ -14,8 +11,9 @@ import com.vega.techtest.validators.TransactionValidator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -36,50 +34,43 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionValidator validator;
     private final TransactionEntityMapper mapper;
+    private final DuplicateTransactionHandler duplicateTransactionHandler;
 
-    @Transactional
     public TransactionResult processTransaction(CreateTransactionCommand command) {
         try {
             logger.info("Processing transaction from store: {}, till: {}, at: {}",
                 command.storeId(), command.tillId(), command.timestamp());
             validator.validateTransactionCommand(command);
 
-            String transactionId = command.transactionId();
-            if (transactionId == null || transactionId.trim().isEmpty()) {
-                transactionId = generateTransactionId();
-            }
-            TransactionEntity transaction = mapper.toEntityFromCommand(command);
-            transaction.setTransactionId(transactionId);
-
-            if (command.items() != null && !command.items().isEmpty()) {
-                List<TransactionItemEntity> items = mapper.toItemEntityListFromCommand(command.items());
-                items.forEach(item -> item.setTransaction(transaction));
-                transaction.setItems(items);
-            }
-
-            TransactionEntity savedTransaction = transactionRepository.save(transaction);
-            logger.info("Successfully saved transaction: {}", transactionId);
-
-            return mapper.toResult(savedTransaction);
-        } catch (DuplicateKeyException e) {
-           return getDuplicateTransaction(command);
+            return createTransaction(command);
+        } catch (DataIntegrityViolationException e) {
+           return duplicateTransactionHandler.findExistingTransaction(command);
+        } catch(ReceiptTotalMismatchException | IllegalStateException e){
+            throw e;
         } catch (Exception e) {
             throw new TransactionProcessingException("Failed to process transaction", e);
         }
     }
 
-    private TransactionResult getDuplicateTransaction(CreateTransactionCommand command) {
-        TransactionEntity existingTransaction = transactionRepository
-                .findByStoreIdAndTillIdAndTransactionTimestamp(
-                        command.storeId(),
-                        command.tillId(),
-                        command.timestamp()
-                );
-            logger.warn("Duplicate transaction detected - Timestamp: {}, StoreId: {}, TillId: {}. " +
-                            "Returning existing transaction: {}",
-                    command.timestamp(), command.storeId(), command.tillId(),
-                    existingTransaction.getTransactionId());
-            return mapper.toResult(existingTransaction);
+    @Transactional
+    protected TransactionResult createTransaction(CreateTransactionCommand command) {
+        String transactionId = command.transactionId();
+        if (transactionId == null || transactionId.trim().isEmpty()) {
+            transactionId = generateTransactionId();
+        }
+        TransactionEntity transaction = mapper.toEntityFromCommand(command);
+        transaction.setTransactionId(transactionId);
+
+        if (command.items() != null && !command.items().isEmpty()) {
+            List<TransactionItemEntity> items = mapper.toItemEntityListFromCommand(command.items());
+            items.forEach(item -> item.setTransaction(transaction));
+            transaction.setItems(items);
+        }
+
+        TransactionEntity savedTransaction = transactionRepository.save(transaction);
+        logger.info("Successfully saved transaction: {}", transactionId);
+
+        return mapper.toResult(savedTransaction);
     }
 
     public TransactionResult getTransactionById(String transactionId) {

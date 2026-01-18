@@ -6,8 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.vega.techtest.dto.TransactionRequest;
-import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.exception.StatisticsCalculationException;
 import com.vega.techtest.mapper.TransactionEntityMapper;
@@ -15,7 +13,7 @@ import com.vega.techtest.repository.TransactionRepository;
 import com.vega.techtest.service.command.CreateTransactionCommand;
 import com.vega.techtest.service.command.TransactionResult;
 import com.vega.techtest.validators.TransactionValidator;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -42,6 +40,9 @@ class TransactionServiceTest {
 
     @Mock
     private TransactionEntityMapper mapper;
+
+    @Mock
+    private DuplicateTransactionHandler duplicateTransactionHandler;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -132,10 +133,9 @@ class TransactionServiceTest {
 
         when(mapper.toEntityFromCommand(command)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
-                .thenThrow(new DuplicateKeyException("Duplicate key"));
-        when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
-                .thenReturn(existingEntity);
-        when(mapper.toResult(existingEntity)).thenReturn(createTransactionResult(existingEntity));
+                .thenThrow(new DataIntegrityViolationException("Duplicate key"));
+        when(duplicateTransactionHandler.findExistingTransaction(command))
+                .thenReturn(createTransactionResult(existingEntity));
 
         TransactionResult result = transactionService.processTransaction(command);
 
@@ -144,7 +144,7 @@ class TransactionServiceTest {
         assertThat(result.totalAmount()).isEqualByComparingTo("9.99");
 
         verify(transactionRepository).save(any(TransactionEntity.class));
-        verify(transactionRepository).findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp);
+        verify(duplicateTransactionHandler).findExistingTransaction(command);
     }
 
     @Test
@@ -188,10 +188,9 @@ class TransactionServiceTest {
 
         when(mapper.toEntityFromCommand(command)).thenReturn(mappedEntity);
         when(transactionRepository.save(any(TransactionEntity.class)))
-                .thenThrow(new DuplicateKeyException("Duplicate key"));
-        when(transactionRepository.findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp))
-                .thenReturn(existingEntity);
-        when(mapper.toResult(existingEntity)).thenReturn(createTransactionResult(existingEntity));
+                .thenThrow(new DataIntegrityViolationException("Duplicate key"));
+        when(duplicateTransactionHandler.findExistingTransaction(command))
+                .thenReturn(createTransactionResult(existingEntity));
 
         TransactionResult result = transactionService.processTransaction(command);
 
@@ -201,7 +200,7 @@ class TransactionServiceTest {
         assertThat(result.totalAmount()).isEqualByComparingTo("9.99");
 
         verify(transactionRepository).save(any(TransactionEntity.class));
-        verify(transactionRepository).findByStoreIdAndTillIdAndTransactionTimestamp("STORE-1", "TILL-1", timestamp);
+        verify(duplicateTransactionHandler).findExistingTransaction(command);
     }
 
     @Nested
