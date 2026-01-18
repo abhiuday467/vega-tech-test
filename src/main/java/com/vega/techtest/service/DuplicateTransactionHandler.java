@@ -42,7 +42,7 @@ public class DuplicateTransactionHandler {
         if (!differences.isEmpty()) {
             String message = String.format(
                     "URGENT- Bad Transactions coming from StoreId %s TillID %s for the same timestamp, " +
-                            "to different transaction reported! Existing vs Sent: %s",
+                            "two different transaction reported! Existing vs Sent: %s",
                     command.storeId(),
                     command.tillId(),
                     String.join("; ", differences)
