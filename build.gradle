@@ -42,6 +42,9 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
     implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+
+    // OpenAPI/Swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
     
     // Development
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

@@ -26,6 +26,12 @@ spring:
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+
 management:
   endpoints:
     web:
