@@ -13,17 +13,29 @@ class TransactionRequestTest {
     void equalsAndHashCode_usesCompositeKey() {
         ZonedDateTime timestamp = ZonedDateTime.parse("2024-01-01T10:15:30Z");
 
-        TransactionRequest first = new TransactionRequest();
-        first.setTimestamp(timestamp);
-        first.setStoreId("STORE-1");
-        first.setTillId("TILL-1");
-        first.setCustomerId("CUST-1");
+        TransactionRequest first = new TransactionRequest(
+                null,
+                "CUST-1",
+                "STORE-1",
+                "TILL-1",
+                "card",
+                null,
+                "GBP",
+                timestamp,
+                null
+        );
 
-        TransactionRequest second = new TransactionRequest();
-        second.setTimestamp(timestamp);
-        second.setStoreId("STORE-1");
-        second.setTillId("TILL-1");
-        second.setCustomerId("CUST-2");
+        TransactionRequest second = new TransactionRequest(
+                null,
+                "CUST-2",
+                "STORE-1",
+                "TILL-1",
+                "cash",
+                null,
+                "GBP",
+                timestamp,
+                null
+        );
 
         assertThat(first).isEqualTo(second);
         assertThat(first.hashCode()).isEqualTo(second.hashCode());
@@ -34,15 +46,29 @@ class TransactionRequestTest {
     void equalsAndHashCode_differsWhenKeyDiffers() {
         ZonedDateTime timestamp = ZonedDateTime.parse("2024-01-01T10:15:30Z");
 
-        TransactionRequest first = new TransactionRequest();
-        first.setTimestamp(timestamp);
-        first.setStoreId("STORE-1");
-        first.setTillId("TILL-1");
+        TransactionRequest first = new TransactionRequest(
+                null,
+                null,
+                "STORE-1",
+                "TILL-1",
+                "card",
+                null,
+                "GBP",
+                timestamp,
+                null
+        );
 
-        TransactionRequest second = new TransactionRequest();
-        second.setTimestamp(timestamp);
-        second.setStoreId("STORE-2");
-        second.setTillId("TILL-1");
+        TransactionRequest second = new TransactionRequest(
+                null,
+                null,
+                "STORE-2",
+                "TILL-1",
+                "card",
+                null,
+                "GBP",
+                timestamp,
+                null
+        );
 
         assertThat(first).isNotEqualTo(second);
     }

@@ -1,5 +1,7 @@
 package com.vega.techtest.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,43 +15,52 @@ import java.util.List;
 
 @EqualsAndHashCode(of = {"timestamp", "storeId", "tillId"})
 @Getter
-@Setter
 public class TransactionRequest {
 
+    @Setter
     private String transactionId;
-    private String customerId;
+    private final String customerId;
 
     @NotBlank(message = "Store ID is required")
-    private String storeId;
+    private final String storeId;
 
     @NotBlank(message = "Till ID is required")
-    private String tillId;
+    private final String tillId;
 
     @NotBlank(message = "Payment method is required")
-    private String paymentMethod;
+    private final String paymentMethod;
 
     @NotNull(message = "Total amount is required")
     @DecimalMin(value = "0.01", message = "Total amount must be greater than zero")
-    private BigDecimal totalAmount;
+    private final BigDecimal totalAmount;
 
-    private String currency = "GBP";
+    private final String currency;
 
     @NotNull(message = "Transaction creation time is required")
-    private ZonedDateTime timestamp;
+    private final ZonedDateTime timestamp;
 
-    private List<TransactionItemRequest> items;
+    private final List<TransactionItemRequest> items;
 
-    public TransactionRequest() {
-    }
-
-    public TransactionRequest(String transactionId, String customerId, String storeId,
-                              String tillId, String paymentMethod, BigDecimal totalAmount) {
+    @JsonCreator
+    public TransactionRequest(
+            @JsonProperty("transactionId") String transactionId,
+            @JsonProperty("customerId") String customerId,
+            @JsonProperty("storeId") String storeId,
+            @JsonProperty("tillId") String tillId,
+            @JsonProperty("paymentMethod") String paymentMethod,
+            @JsonProperty("totalAmount") BigDecimal totalAmount,
+            @JsonProperty("currency") String currency,
+            @JsonProperty("timestamp") ZonedDateTime timestamp,
+            @JsonProperty("items") List<TransactionItemRequest> items
+    ) {
         this.transactionId = transactionId;
         this.customerId = customerId;
         this.storeId = storeId;
         this.tillId = tillId;
         this.paymentMethod = paymentMethod;
         this.totalAmount = totalAmount;
-        this.timestamp = ZonedDateTime.now();
+        this.currency = currency == null ? "GBP" : currency;
+        this.timestamp = timestamp;
+        this.items = items;
     }
 }

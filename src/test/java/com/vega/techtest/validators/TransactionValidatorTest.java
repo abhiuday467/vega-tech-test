@@ -38,8 +38,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when storeId is null")
     void validateTransactionRequest_nullStoreId() {
-        TransactionRequest request = createValidRequest();
-        request.setStoreId(null);
+        TransactionRequest request = buildRequest(
+                null,
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -49,8 +55,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when storeId is blank")
     void validateTransactionRequest_blankStoreId() {
-        TransactionRequest request = createValidRequest();
-        request.setStoreId("   ");
+        TransactionRequest request = buildRequest(
+                "   ",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -60,8 +72,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when tillId is null")
     void validateTransactionRequest_nullTillId() {
-        TransactionRequest request = createValidRequest();
-        request.setTillId(null);
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                null,
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -71,8 +89,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when tillId is blank")
     void validateTransactionRequest_blankTillId() {
-        TransactionRequest request = createValidRequest();
-        request.setTillId("");
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -82,8 +106,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when paymentMethod is null")
     void validateTransactionRequest_nullPaymentMethod() {
-        TransactionRequest request = createValidRequest();
-        request.setPaymentMethod(null);
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                null,
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -93,8 +123,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when paymentMethod is blank")
     void validateTransactionRequest_blankPaymentMethod() {
-        TransactionRequest request = createValidRequest();
-        request.setPaymentMethod("  ");
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "  ",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -104,8 +140,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when totalAmount is null")
     void validateTransactionRequest_nullTotalAmount() {
-        TransactionRequest request = createValidRequest();
-        request.setTotalAmount(null);
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                null,
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -115,8 +157,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when totalAmount is zero")
     void validateTransactionRequest_zeroTotalAmount() {
-        TransactionRequest request = createValidRequest();
-        request.setTotalAmount(BigDecimal.ZERO);
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                BigDecimal.ZERO,
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -126,8 +174,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when totalAmount is negative")
     void validateTransactionRequest_negativeTotalAmount() {
-        TransactionRequest request = createValidRequest();
-        request.setTotalAmount(new BigDecimal("-10.00"));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("-10.00"),
+                ZonedDateTime.now(),
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -137,8 +191,14 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when timestamp is null")
     void validateTransactionRequest_nullTimestamp() {
-        TransactionRequest request = createValidRequest();
-        request.setTimestamp(null);
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                null,
+                null
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -148,13 +208,18 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw ReceiptTotalMismatchException when calculated total doesn't match provided total")
     void validateTransactionRequest_totalMismatch() {
-        TransactionRequest request = createValidRequest();
-        request.setTotalAmount(new BigDecimal("100.00")); // Doesn't match items total
         TransactionItemRequest item = new TransactionItemRequest();
         item.setProductName("Apple");
         item.setUnitPrice(new BigDecimal("5.00"));
         item.setQuantity(2);
-        request.setItems(List.of(item));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("100.00"),
+                ZonedDateTime.now(),
+                List.of(item)
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(ReceiptTotalMismatchException.class)
@@ -164,10 +229,16 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item is null")
     void validateTransactionRequest_nullItem() {
-        TransactionRequest request = createValidRequest();
         List<TransactionItemRequest> items = new ArrayList<>();
         items.add(null);
-        request.setItems(items);
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                items
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -177,12 +248,18 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item unitPrice is null")
     void validateTransactionRequest_nullItemUnitPrice() {
-        TransactionRequest request = createValidRequest();
         TransactionItemRequest item = new TransactionItemRequest();
         item.setProductName("Apple");
         item.setUnitPrice(null);
         item.setQuantity(2);
-        request.setItems(List.of(item));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                List.of(item)
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -192,12 +269,18 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item unitPrice is negative")
     void validateTransactionRequest_negativeItemUnitPrice() {
-        TransactionRequest request = createValidRequest();
         TransactionItemRequest item = new TransactionItemRequest();
         item.setProductName("Apple");
         item.setUnitPrice(new BigDecimal("-5.00"));
         item.setQuantity(2);
-        request.setItems(List.of(item));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                List.of(item)
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -207,12 +290,18 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item quantity is null")
     void validateTransactionRequest_nullItemQuantity() {
-        TransactionRequest request = createValidRequest();
         TransactionItemRequest item = new TransactionItemRequest();
         item.setProductName("Apple");
         item.setUnitPrice(new BigDecimal("5.00"));
         item.setQuantity(null);
-        request.setItems(List.of(item));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                List.of(item)
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -222,12 +311,18 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item quantity is zero")
     void validateTransactionRequest_zeroItemQuantity() {
-        TransactionRequest request = createValidRequest();
         TransactionItemRequest item = new TransactionItemRequest();
         item.setProductName("Apple");
         item.setUnitPrice(new BigDecimal("5.00"));
         item.setQuantity(0);
-        request.setItems(List.of(item));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                List.of(item)
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -237,12 +332,18 @@ class TransactionValidatorTest {
     @Test
     @DisplayName("Should throw exception when item quantity is negative")
     void validateTransactionRequest_negativeItemQuantity() {
-        TransactionRequest request = createValidRequest();
         TransactionItemRequest item = new TransactionItemRequest();
         item.setProductName("Apple");
         item.setUnitPrice(new BigDecimal("5.00"));
         item.setQuantity(-1);
-        request.setItems(List.of(item));
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                List.of(item)
+        );
 
         assertThatThrownBy(() -> validator.validateTransactionRequest(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -250,13 +351,30 @@ class TransactionValidatorTest {
     }
 
     private TransactionRequest createValidRequest() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("10.00"));
-        request.setTimestamp(ZonedDateTime.now());
-        return request;
+        return buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
+    }
+
+    private TransactionRequest buildRequest(String storeId, String tillId, String paymentMethod,
+                                            BigDecimal totalAmount, ZonedDateTime timestamp,
+                                            List<TransactionItemRequest> items) {
+        return new TransactionRequest(
+                null,
+                null,
+                storeId,
+                tillId,
+                paymentMethod,
+                totalAmount,
+                "GBP",
+                timestamp,
+                items
+        );
     }
 
     @Nested

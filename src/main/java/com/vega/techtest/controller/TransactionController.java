@@ -49,8 +49,8 @@ public class TransactionController {
         return ResponseEntity.ok(Map.of(
                 "status", "success",
                 "message", "Transaction processed successfully",
-                "transactionId", result.transactionId(),
-                "timestamp", result.transactionTimestamp()
+                "transactionId", response.getTransactionId(),
+                "timestamp", response.getTransactionTimestamp()
         ));
     }
 
@@ -128,20 +128,23 @@ public class TransactionController {
     @Timed("transaction_submission_duration")
     @PostMapping("/sample")
     public ResponseEntity<Map<String, Object>> createSampleTransaction() {
-        TransactionRequest request = new TransactionRequest();
-        request.setCustomerId("CUST-" + (int) (Math.random() * 99999));
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-" + (int) (Math.random() * 10 + 1));
-        request.setPaymentMethod(Math.random() > 0.5 ? "card" : "cash");
-        request.setTotalAmount(new BigDecimal("7.69"));
-        request.setCurrency("GBP");
-        request.setTimestamp(ZonedDateTime.now());
-
-        request.setItems(List.of(
+        List<TransactionItemRequest> items = List.of(
                 new TransactionItemRequest("Milk", "MILK001", new BigDecimal("2.50"), 1, "Dairy"),
                 new TransactionItemRequest("Bread", "BREAD001", new BigDecimal("1.20"), 1, "Bakery"),
                 new TransactionItemRequest("Coffee", "COFFEE001", new BigDecimal("3.99"), 1, "Beverages")
-        ));
+        );
+
+        TransactionRequest request = new TransactionRequest(
+                null,
+                "CUST-" + (int) (Math.random() * 99999),
+                "STORE-001",
+                "TILL-" + (int) (Math.random() * 10 + 1),
+                Math.random() > 0.5 ? "card" : "cash",
+                new BigDecimal("7.69"),
+                "GBP",
+                ZonedDateTime.now(),
+                items
+        );
 
         CreateTransactionCommand command = transactionRequestMapper.toCommand(request);
         TransactionResult result = transactionService.processTransaction(command);

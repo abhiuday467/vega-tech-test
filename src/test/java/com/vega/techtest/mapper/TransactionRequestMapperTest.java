@@ -2,14 +2,18 @@ package com.vega.techtest.mapper;
 
 import com.vega.techtest.dto.TransactionItemRequest;
 import com.vega.techtest.dto.TransactionRequest;
+import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.service.command.CreateTransactionCommand;
 import com.vega.techtest.service.command.TransactionItem;
+import com.vega.techtest.service.command.TransactionResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,16 +29,18 @@ class TransactionRequestMapperTest {
     @Test
     @DisplayName("Should map TransactionRequest to CreateTransactionCommand")
     void shouldMapTransactionRequestToCommand() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
-        TransactionRequest request = new TransactionRequest();
-        request.setTransactionId("TXN-123");
-        request.setCustomerId("CUST-1");
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-1");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("100.00"));
-        request.setCurrency("GBP");
-        request.setTimestamp(timestamp);
+        ZonedDateTime timestamp = ZonedDateTime.of(2024, 1, 1, 10, 15, 30, 0, ZoneId.of("America/New_York"));
+        TransactionRequest request = new TransactionRequest(
+                "TXN-123",
+                "CUST-1",
+                "STORE-001",
+                "TILL-1",
+                "card",
+                new BigDecimal("100.00"),
+                "GBP",
+                timestamp,
+                null
+        );
 
         CreateTransactionCommand command = mapper.toCommand(request);
 
@@ -45,19 +51,24 @@ class TransactionRequestMapperTest {
         assertThat(command.paymentMethod()).isEqualTo("card");
         assertThat(command.totalAmount()).isEqualByComparingTo("100.00");
         assertThat(command.currency()).isEqualTo("GBP");
-        assertThat(command.timestamp()).isEqualTo(timestamp);
+        assertThat(command.timestamp().toInstant()).isEqualTo(timestamp.toInstant());
+        assertThat(command.timestamp().getZone()).isEqualTo(ZoneOffset.UTC);
     }
 
     @Test
     @DisplayName("Should map null transactionId")
     void shouldMapNullTransactionId() {
-        TransactionRequest request = new TransactionRequest();
-        request.setTransactionId(null);
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-1");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("100.00"));
-        request.setTimestamp(ZonedDateTime.now());
+        TransactionRequest request = new TransactionRequest(
+                null,
+                null,
+                "STORE-001",
+                "TILL-1",
+                "card",
+                new BigDecimal("100.00"),
+                "GBP",
+                ZonedDateTime.now(),
+                null
+        );
 
         CreateTransactionCommand command = mapper.toCommand(request);
 
@@ -128,16 +139,31 @@ class TransactionRequestMapperTest {
     @DisplayName("Should map request with items to command with items")
     void shouldMapRequestWithItemsToCommandWithItems() {
         ZonedDateTime timestamp = ZonedDateTime.now();
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-1");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("100.00"));
-        request.setTimestamp(timestamp);
+        TransactionRequest request = new TransactionRequest(
+                null,
+                null,
+                "STORE-001",
+                "TILL-1",
+                "card",
+                new BigDecimal("100.00"),
+                "GBP",
+                timestamp,
+                null
+        );
 
         List<TransactionItemRequest> itemRequests = new ArrayList<>();
         itemRequests.add(new TransactionItemRequest("Product A", "PROD-001", new BigDecimal("50.00"), 2));
-        request.setItems(itemRequests);
+        request = new TransactionRequest(
+                request.getTransactionId(),
+                request.getCustomerId(),
+                request.getStoreId(),
+                request.getTillId(),
+                request.getPaymentMethod(),
+                request.getTotalAmount(),
+                request.getCurrency(),
+                request.getTimestamp(),
+                itemRequests
+        );
 
         CreateTransactionCommand command = mapper.toCommand(request);
 
@@ -149,15 +175,48 @@ class TransactionRequestMapperTest {
     @Test
     @DisplayName("Should preserve currency default from request")
     void shouldPreserveCurrencyDefault() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-1");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("100.00"));
-        request.setTimestamp(ZonedDateTime.now());
+        TransactionRequest request = new TransactionRequest(
+                null,
+                null,
+                "STORE-001",
+                "TILL-1",
+                "card",
+                new BigDecimal("100.00"),
+                null,
+                ZonedDateTime.now(),
+                null
+        );
 
         CreateTransactionCommand command = mapper.toCommand(request);
 
         assertThat(command.currency()).isEqualTo("GBP");
+    }
+
+    @Test
+    @DisplayName("Should normalize response timestamps to UTC")
+    void shouldNormalizeResponseTimestampsToUtc() {
+        ZonedDateTime transactionTimestamp = ZonedDateTime.of(2024, 1, 1, 12, 0, 0, 0, ZoneId.of("Asia/Kolkata"));
+        ZonedDateTime createdAt = ZonedDateTime.of(2024, 1, 1, 12, 5, 0, 0, ZoneId.of("Asia/Kolkata"));
+
+        TransactionResult result = new TransactionResult(
+                "TXN-123",
+                "CUST-1",
+                "STORE-001",
+                "TILL-1",
+                "card",
+                new BigDecimal("100.00"),
+                "GBP",
+                transactionTimestamp,
+                createdAt,
+                "COMPLETED",
+                new ArrayList<>()
+        );
+
+        TransactionResponse response = mapper.toResponse(result);
+
+        assertThat(response.getTransactionTimestamp().toInstant()).isEqualTo(transactionTimestamp.toInstant());
+        assertThat(response.getTransactionTimestamp().getZone()).isEqualTo(ZoneOffset.UTC);
+        assertThat(response.getCreatedAt().toInstant()).isEqualTo(createdAt.toInstant());
+        assertThat(response.getCreatedAt().getZone()).isEqualTo(ZoneOffset.UTC);
     }
 }

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,10 +32,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should record all metrics when transaction is submitted")
     void recordTransactionSubmission_recordsAllMetrics() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("card");
+        TransactionRequest request = createRequest("STORE-001", "TILL-001", "card");
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -79,10 +77,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should handle null total amount gracefully")
     void recordTransactionSubmission_nullTotalAmount() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("card");
+        TransactionRequest request = createRequest("STORE-001", "TILL-001", "card");
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -103,10 +98,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should handle null items gracefully")
     void recordTransactionSubmission_nullItems() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("card");
+        TransactionRequest request = createRequest("STORE-001", "TILL-001", "card");
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -127,10 +119,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should handle null store ID gracefully")
     void recordTransactionSubmission_nullStoreId() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId(null);
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("card");
+        TransactionRequest request = createRequest(null, "TILL-001", "card");
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -150,10 +139,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should handle null till ID gracefully")
     void recordTransactionSubmission_nullTillId() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId(null);
-        request.setPaymentMethod("card");
+        TransactionRequest request = createRequest("STORE-001", null, "card");
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -173,10 +159,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should handle null payment method gracefully")
     void recordTransactionSubmission_nullPaymentMethod() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod(null);
+        TransactionRequest request = createRequest("STORE-001", "TILL-001", null);
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -206,10 +189,7 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should handle empty items list")
     void recordTransactionSubmission_emptyItems() {
-        TransactionRequest request = new TransactionRequest();
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("cash");
+        TransactionRequest request = createRequest("STORE-001", "TILL-001", "cash");
 
         TransactionResponse response = new TransactionResponse();
         response.setTransactionId("TXN-123");
@@ -230,20 +210,14 @@ class TransactionMetricsServiceTest {
     @Test
     @DisplayName("Should record multiple submissions correctly")
     void recordTransactionSubmission_multipleSubmissions() {
-        TransactionRequest request1 = new TransactionRequest();
-        request1.setStoreId("STORE-001");
-        request1.setTillId("TILL-001");
-        request1.setPaymentMethod("card");
+        TransactionRequest request1 = createRequest("STORE-001", "TILL-001", "card");
 
         TransactionResponse response1 = new TransactionResponse();
         response1.setTransactionId("TXN-123");
         response1.setTotalAmount(new BigDecimal("50.00"));
         response1.setItems(createItemList(2));
 
-        TransactionRequest request2 = new TransactionRequest();
-        request2.setStoreId("STORE-002");
-        request2.setTillId("TILL-002");
-        request2.setPaymentMethod("cash");
+        TransactionRequest request2 = createRequest("STORE-002", "TILL-002", "cash");
 
         TransactionResponse response2 = new TransactionResponse();
         response2.setTransactionId("TXN-124");
@@ -273,5 +247,19 @@ class TransactionMetricsServiceTest {
             items.add(item);
         }
         return items;
+    }
+
+    private TransactionRequest createRequest(String storeId, String tillId, String paymentMethod) {
+        return new TransactionRequest(
+                null,
+                null,
+                storeId,
+                tillId,
+                paymentMethod,
+                new BigDecimal("1.00"),
+                "GBP",
+                ZonedDateTime.now(),
+                null
+        );
     }
 }

@@ -120,13 +120,17 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 with field errors when bean validation fails")
         void submitTransaction_validationFailure() throws Exception {
-            TransactionRequest request = new TransactionRequest();
-            request.setCustomerId("CUST-001");
-            // Missing storeId (required)
-            // Missing tillId (required)
-            // Missing paymentMethod (required)
-            // Missing totalAmount (required)
-            // Missing timestamp (required)
+            TransactionRequest request = new TransactionRequest(
+                    null,
+                    "CUST-001",
+                    null,
+                    null,
+                    null,
+                    null,
+                    "GBP",
+                    null,
+                    null
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -146,8 +150,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 when totalAmount is zero")
         void submitTransaction_zeroAmount() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setTotalAmount(new BigDecimal("0.00"));
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("0.00"),
+                    ZonedDateTime.now()
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -163,8 +173,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 when totalAmount is negative")
         void submitTransaction_negativeAmount() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setTotalAmount(new BigDecimal("-10.00"));
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("-10.00"),
+                    ZonedDateTime.now()
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -180,8 +196,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 when storeId is blank")
         void submitTransaction_blankStoreId() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setStoreId("");
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("5.50"),
+                    ZonedDateTime.now()
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -197,8 +219,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 when paymentMethod is blank")
         void submitTransaction_blankPaymentMethod() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setPaymentMethod("   ");
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "   ",
+                    new BigDecimal("5.50"),
+                    ZonedDateTime.now()
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -214,8 +242,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 when storeId is missing")
         void submitTransaction_missingStoreId() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setStoreId(null);
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    null,
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("5.50"),
+                    ZonedDateTime.now()
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -231,8 +265,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 400 when paymentMethod is missing")
         void submitTransaction_missingPaymentMethod() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setPaymentMethod(null);
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    null,
+                    new BigDecimal("5.50"),
+                    ZonedDateTime.now()
+            );
 
             mockMvc.perform(post("/api/transactions/submit")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -304,11 +344,14 @@ class TransactionControllerTest {
         void submitTransaction_idempotentCompositeKey() throws Exception {
             ZonedDateTime timestamp = ZonedDateTime.now();
 
-            TransactionRequest request = createValidTransactionRequest();
-            request.setTransactionId(null); // No transaction ID provided
-            request.setStoreId("STORE-001");
-            request.setTillId("TILL-001");
-            request.setTimestamp(timestamp);
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "card",
+                    new BigDecimal("5.50"),
+                    timestamp
+            );
 
             TransactionResult result = createTransactionResult("TXN-GENERATED");
             TransactionResponse response = createTransactionResponse("TXN-GENERATED");
@@ -386,10 +429,14 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should record metrics with correct tags for store, till, and payment method")
         void submitTransaction_recordsMetricsWithTags() throws Exception {
-            TransactionRequest request = createValidTransactionRequest();
-            request.setStoreId("STORE-123");
-            request.setTillId("TILL-456");
-            request.setPaymentMethod("card");
+            TransactionRequest request = createRequest(
+                    "CUST-001",
+                    "STORE-123",
+                    "TILL-456",
+                    "card",
+                    new BigDecimal("5.50"),
+                    ZonedDateTime.now()
+            );
 
             TransactionResult result = createTransactionResult("TXN-001");
             TransactionResponse response = createTransactionResponse("TXN-001");
@@ -776,24 +823,49 @@ class TransactionControllerTest {
     }
 
     private TransactionRequest createValidTransactionRequest() {
-        TransactionRequest request = new TransactionRequest();
-        request.setCustomerId("CUST-001");
-        request.setStoreId("STORE-001");
-        request.setTillId("TILL-001");
-        request.setPaymentMethod("card");
-        request.setTotalAmount(new BigDecimal("5.50"));
-        request.setCurrency("GBP");
-        request.setTimestamp(ZonedDateTime.now());
-
         TransactionItemRequest item1 = new TransactionItemRequest(
                 "Apple", "APPLE-001", new BigDecimal("1.50"), 2, "Fruit"
         );
         TransactionItemRequest item2 = new TransactionItemRequest(
                 "Milk", "MILK-001", new BigDecimal("2.50"), 1, "Dairy"
         );
-        request.setItems(Arrays.asList(item1, item2));
+        List<TransactionItemRequest> items = Arrays.asList(item1, item2);
 
-        return request;
+        return new TransactionRequest(
+                null,
+                "CUST-001",
+                "STORE-001",
+                "TILL-001",
+                "card",
+                new BigDecimal("5.50"),
+                "GBP",
+                ZonedDateTime.now(),
+                items
+        );
+    }
+
+    private TransactionRequest createRequest(String customerId, String storeId, String tillId,
+                                             String paymentMethod, BigDecimal totalAmount,
+                                             ZonedDateTime timestamp) {
+        TransactionItemRequest item1 = new TransactionItemRequest(
+                "Apple", "APPLE-001", new BigDecimal("1.50"), 2, "Fruit"
+        );
+        TransactionItemRequest item2 = new TransactionItemRequest(
+                "Milk", "MILK-001", new BigDecimal("2.50"), 1, "Dairy"
+        );
+        List<TransactionItemRequest> items = Arrays.asList(item1, item2);
+
+        return new TransactionRequest(
+                null,
+                customerId,
+                storeId,
+                tillId,
+                paymentMethod,
+                totalAmount,
+                "GBP",
+                timestamp,
+                items
+        );
     }
 
     private TransactionResponse createTransactionResponse(String transactionId) {
