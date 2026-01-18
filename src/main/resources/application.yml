@@ -1,6 +1,19 @@
 server:
   port: 8080
 
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  topic:
+    transactions: transactions
+    dlq: transactions.dlq
+  consumer:
+    group-id: transaction-service
+    auto-offset-reset: earliest
+  producer:
+    acks: all
+    retries: 3
+    enable-idempotence: true
+
 spring:
   application:
     name: tech-test
@@ -25,6 +38,12 @@ spring:
     url: ${spring.datasource.url}
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
 
 management:
   endpoints:

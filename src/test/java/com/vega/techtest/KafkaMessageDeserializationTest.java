@@ -1,7 +1,7 @@
 package com.vega.techtest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vega.techtest.dto.KafkaTransactionEvent;
+import com.vega.techtest.adapter.in.messaging.kafka.dto.KafkaTransactionEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -63,14 +63,14 @@ public class KafkaMessageDeserializationTest {
 
         // Verify event envelope
         assertNotNull(event);
-        assertEquals("uuid", event.getEventId());
-        assertEquals("TRANSACTION_CREATED", event.getEventType());
-        assertEquals("2025-06-27T12:00:00.000Z", event.getEventTimestamp());
-        assertEquals("till-system", event.getSource());
-        assertEquals("1.0", event.getVersion());
+        assertEquals("uuid", event.eventId());
+        assertEquals("TRANSACTION_CREATED", event.eventType());
+        assertEquals("2025-06-27T12:00:00.000Z", event.eventTimestamp());
+        assertEquals("till-system", event.source());
+        assertEquals("1.0", event.version());
 
         // Verify data field is present and contains expected structure
-        Map<String, Object> data = event.getData();
+        Map<String, Object> data = event.data();
         assertNotNull(data);
         assertEquals("TXN-12345678", data.get("transactionId"));
         assertEquals("CUST-12345", data.get("customerId"));
@@ -123,12 +123,12 @@ public class KafkaMessageDeserializationTest {
 
         // Verify the event can be deserialized correctly
         assertNotNull(event);
-        assertEquals("test-event-123", event.getEventId());
-        assertEquals("TRANSACTION_CREATED", event.getEventType());
-        assertEquals("test-till", event.getSource());
+        assertEquals("test-event-123", event.eventId());
+        assertEquals("TRANSACTION_CREATED", event.eventType());
+        assertEquals("test-till", event.source());
 
         // Verify data types are preserved correctly
-        Map<String, Object> data = event.getData();
+        Map<String, Object> data = event.data();
         assertEquals("TXN-TEST-001", data.get("transactionId"));
         assertEquals(15.75, data.get("totalAmount")); // Should be Double from JSON
         assertEquals("cash", data.get("paymentMethod"));
@@ -161,7 +161,7 @@ public class KafkaMessageDeserializationTest {
 
         // Verify we can deserialize it back
         KafkaTransactionEvent deserializedEvent = objectMapper.readValue(json, KafkaTransactionEvent.class);
-        assertEquals("test-serialization", deserializedEvent.getEventId());
-        assertEquals("TRANSACTION_CREATED", deserializedEvent.getEventType());
+        assertEquals("test-serialization", deserializedEvent.eventId());
+        assertEquals("TRANSACTION_CREATED", deserializedEvent.eventType());
     }
 } 

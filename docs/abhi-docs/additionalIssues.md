@@ -1323,7 +1323,7 @@ public ResponseEntity<TransactionResponse> submitTransaction(@RequestBody Transa
 @Component
 public class TransactionMetricsAspect {
 
-    @AfterReturning(pointcut = "execution(* com.vega.techtest.service.TransactionService.processTransaction(..))",
+    @AfterReturning(pointcut = "execution(* com.vega.techtest.domain.transaction.service.TransactionService.processTransaction(..))",
                     returning = "response")
     public void recordTransactionMetrics(TransactionResponse response) {
         transactionAmountSummary.record(response.getTotalAmount().doubleValue());
