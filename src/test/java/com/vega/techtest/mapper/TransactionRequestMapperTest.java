@@ -51,8 +51,7 @@ class TransactionRequestMapperTest {
         assertThat(command.paymentMethod()).isEqualTo("card");
         assertThat(command.totalAmount()).isEqualByComparingTo("100.00");
         assertThat(command.currency()).isEqualTo("GBP");
-        assertThat(command.timestamp().toInstant()).isEqualTo(timestamp.toInstant());
-        assertThat(command.timestamp().getZone()).isEqualTo(ZoneOffset.UTC);
+        assertThat(command.timestamp()).isEqualTo(timestamp.toInstant());
     }
 
     @Test
@@ -206,8 +205,8 @@ class TransactionRequestMapperTest {
                 "card",
                 new BigDecimal("100.00"),
                 "GBP",
-                transactionTimestamp,
-                createdAt,
+                transactionTimestamp.toInstant(),
+                createdAt.toInstant(),
                 "COMPLETED",
                 new ArrayList<>()
         );

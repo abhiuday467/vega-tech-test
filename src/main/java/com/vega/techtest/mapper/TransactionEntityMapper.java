@@ -13,6 +13,9 @@ import com.vega.techtest.service.command.TransactionResult;
 import org.mapstruct.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -20,7 +23,7 @@ public interface TransactionEntityMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "transactionId", ignore = true)
-    @Mapping(target = "createdAt", expression = "java(java.time.ZonedDateTime.now())")
+    @Mapping(target = "createdAt", expression = "java(java.time.Instant.now())")
     @Mapping(target = "transactionTimestamp", source = "timestamp")
     @Mapping(target = "items", ignore = true)
     TransactionEntity toEntityFromCommand(CreateTransactionCommand command);
@@ -54,8 +57,8 @@ public interface TransactionEntityMapper {
 
     @Deprecated
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", expression = "java(java.time.ZonedDateTime.now())")
-    @Mapping(target = "transactionTimestamp", source = "timestamp")
+    @Mapping(target = "createdAt", expression = "java(java.time.Instant.now())")
+    @Mapping(target = "transactionTimestamp", expression = "java(request.timestamp() == null ? null : request.timestamp().toInstant())")
     @Mapping(target = "items", ignore = true)
     TransactionEntity toEntity(TransactionRequest request);
 
@@ -73,5 +76,12 @@ public interface TransactionEntityMapper {
             return BigDecimal.ZERO;
         }
         return unitPrice.multiply(BigDecimal.valueOf(quantity));
+    }
+
+    default ZonedDateTime toUtc(Instant timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        return ZonedDateTime.ofInstant(timestamp, ZoneOffset.UTC);
     }
 }

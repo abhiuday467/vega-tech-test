@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +15,7 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should create command with all fields")
     void shouldCreateCommandWithAllFields() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
         List<TransactionItem> items = new ArrayList<>();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
@@ -44,7 +44,7 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should apply default currency when null")
     void shouldApplyDefaultCurrency() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
             "TXN-123",
@@ -64,7 +64,7 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should apply default currency when empty")
     void shouldApplyDefaultCurrencyWhenEmpty() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
             "TXN-123",
@@ -84,7 +84,7 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should use custom equals based on natural key (timestamp, storeId, tillId)")
     void shouldUseNaturalKeyForEquals() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command1 = new CreateTransactionCommand(
             "TXN-123",
@@ -116,8 +116,8 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should not be equal when natural key differs")
     void shouldNotBeEqualWhenNaturalKeyDiffers() {
-        ZonedDateTime timestamp1 = ZonedDateTime.now();
-        ZonedDateTime timestamp2 = timestamp1.plusMinutes(1);
+        Instant timestamp1 = Instant.now();
+        Instant timestamp2 = timestamp1.plusSeconds(60);
 
         CreateTransactionCommand command1 = new CreateTransactionCommand(
             "TXN-123",
@@ -149,7 +149,7 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should use custom hashCode based on natural key")
     void shouldUseNaturalKeyForHashCode() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command1 = new CreateTransactionCommand(
             "TXN-123",
@@ -181,7 +181,7 @@ class CreateTransactionCommandTest {
     @Test
     @DisplayName("Should allow null transactionId")
     void shouldAllowNullTransactionId() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
             null,

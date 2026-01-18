@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -111,7 +111,7 @@ public class TransactionService {
         }
     }
 
-    public List<TransactionResult> getTransactionsByDateRange(ZonedDateTime startDate, ZonedDateTime endDate) {
+    public List<TransactionResult> getTransactionsByDateRange(Instant startDate, Instant endDate) {
         try {
             return mapper.toResultList(
                     transactionRepository.findTransactionsByDateRange(startDate, endDate)

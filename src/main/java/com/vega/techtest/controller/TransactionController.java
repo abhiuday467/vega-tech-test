@@ -111,7 +111,10 @@ public class TransactionController {
     public ResponseEntity<Map<String, Object>> getTransactionsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate) {
-        List<TransactionResult> results = transactionService.getTransactionsByDateRange(startDate, endDate);
+        List<TransactionResult> results = transactionService.getTransactionsByDateRange(
+                startDate == null ? null : startDate.toInstant(),
+                endDate == null ? null : endDate.toInstant()
+        );
         List<TransactionResponse> transactions = transactionRequestMapper.toResponseList(results);
         metricsService.recordTransactionRetrieval();
 

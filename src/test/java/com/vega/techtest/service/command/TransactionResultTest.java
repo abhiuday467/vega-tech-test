@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,8 +15,8 @@ class TransactionResultTest {
     @Test
     @DisplayName("Should create result with all fields")
     void shouldCreateResultWithAllFields() {
-        ZonedDateTime transactionTimestamp = ZonedDateTime.now();
-        ZonedDateTime createdAt = ZonedDateTime.now();
+        Instant transactionTimestamp = Instant.now();
+        Instant createdAt = Instant.now();
         List<TransactionItemResult> items = new ArrayList<>();
 
         TransactionResult result = new TransactionResult(
@@ -49,9 +49,9 @@ class TransactionResultTest {
     @Test
     @DisplayName("Should use custom equals based on natural key (transactionTimestamp, storeId, tillId)")
     void shouldUseNaturalKeyForEquals() {
-        ZonedDateTime transactionTimestamp = ZonedDateTime.now();
-        ZonedDateTime createdAt1 = ZonedDateTime.now();
-        ZonedDateTime createdAt2 = createdAt1.plusMinutes(5);
+        Instant transactionTimestamp = Instant.now();
+        Instant createdAt1 = Instant.now();
+        Instant createdAt2 = createdAt1.plusSeconds(300);
 
         TransactionResult result1 = new TransactionResult(
             "TXN-123",
@@ -87,9 +87,9 @@ class TransactionResultTest {
     @Test
     @DisplayName("Should not be equal when natural key differs")
     void shouldNotBeEqualWhenNaturalKeyDiffers() {
-        ZonedDateTime transactionTimestamp1 = ZonedDateTime.now();
-        ZonedDateTime transactionTimestamp2 = transactionTimestamp1.plusMinutes(1);
-        ZonedDateTime createdAt = ZonedDateTime.now();
+        Instant transactionTimestamp1 = Instant.now();
+        Instant transactionTimestamp2 = transactionTimestamp1.plusSeconds(60);
+        Instant createdAt = Instant.now();
 
         TransactionResult result1 = new TransactionResult(
             "TXN-123",
@@ -125,9 +125,9 @@ class TransactionResultTest {
     @Test
     @DisplayName("Should use custom hashCode based on natural key")
     void shouldUseNaturalKeyForHashCode() {
-        ZonedDateTime transactionTimestamp = ZonedDateTime.now();
-        ZonedDateTime createdAt1 = ZonedDateTime.now();
-        ZonedDateTime createdAt2 = createdAt1.plusMinutes(5);
+        Instant transactionTimestamp = Instant.now();
+        Instant createdAt1 = Instant.now();
+        Instant createdAt2 = createdAt1.plusSeconds(300);
 
         TransactionResult result1 = new TransactionResult(
             "TXN-123",

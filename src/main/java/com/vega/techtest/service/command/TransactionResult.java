@@ -1,7 +1,7 @@
 package com.vega.techtest.service.command;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,8 +13,8 @@ public record TransactionResult(
     String paymentMethod,
     BigDecimal totalAmount,
     String currency,
-    ZonedDateTime transactionTimestamp,
-    ZonedDateTime createdAt,
+    Instant transactionTimestamp,
+    Instant createdAt,
     String status,
     List<TransactionItemResult> items
 ) {

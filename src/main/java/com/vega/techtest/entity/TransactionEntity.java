@@ -3,7 +3,7 @@ package com.vega.techtest.entity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Entity
@@ -36,10 +36,10 @@ public class TransactionEntity {
     private String currency = "GBP";
 
     @Column(name = "transaction_timestamp", nullable = false)
-    private ZonedDateTime transactionTimestamp;
+    private Instant transactionTimestamp;
 
     @Column(name = "created_at", nullable = false)
-    private ZonedDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "status", nullable = false)
     private String status = "COMPLETED";
@@ -48,11 +48,12 @@ public class TransactionEntity {
     private List<TransactionItemEntity> items;
 
     public TransactionEntity() {
-        this.createdAt = ZonedDateTime.now();
+        this.createdAt = Instant.now();
     }
 
     public TransactionEntity(String transactionId, String customerId, String storeId,
-                             String tillId, String paymentMethod, BigDecimal totalAmount) {
+                             String tillId, String paymentMethod, BigDecimal totalAmount,
+                             Instant transactionTimestamp) {
         this();
         this.transactionId = transactionId;
         this.customerId = customerId;
@@ -60,7 +61,7 @@ public class TransactionEntity {
         this.tillId = tillId;
         this.paymentMethod = paymentMethod;
         this.totalAmount = totalAmount;
-        this.transactionTimestamp = ZonedDateTime.now();
+        this.transactionTimestamp = transactionTimestamp;
     }
 
     public Long getId() {
@@ -127,19 +128,19 @@ public class TransactionEntity {
         this.currency = currency;
     }
 
-    public ZonedDateTime getTransactionTimestamp() {
+    public Instant getTransactionTimestamp() {
         return transactionTimestamp;
     }
 
-    public void setTransactionTimestamp(ZonedDateTime transactionTimestamp) {
+    public void setTransactionTimestamp(Instant transactionTimestamp) {
         this.transactionTimestamp = transactionTimestamp;
     }
 
-    public ZonedDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(ZonedDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 

@@ -15,7 +15,7 @@ import com.vega.techtest.service.command.TransactionResult;
 import com.vega.techtest.validators.TransactionValidator;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +50,7 @@ class TransactionServiceTest {
     @Test
     @DisplayName("Should generate transaction id and persist transaction")
     void processTransaction_generatesIdAndSaves() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 null,
@@ -70,7 +70,8 @@ class TransactionServiceTest {
                 "STORE-1",
                 "TILL-1",
                 "card",
-                new BigDecimal("12.50")
+                new BigDecimal("12.50"),
+                timestamp
         );
         mappedEntity.setCurrency("GBP");
         mappedEntity.setTransactionTimestamp(timestamp);
@@ -95,7 +96,7 @@ class TransactionServiceTest {
     @Test
     @DisplayName("Should return existing transaction for duplicate id (idempotent)")
     void processTransaction_returnsExistingForDuplicateId() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 "TXN-EXIST",
@@ -115,7 +116,8 @@ class TransactionServiceTest {
                 "STORE-1",
                 "TILL-1",
                 "cash",
-                new BigDecimal("9.99")
+                new BigDecimal("9.99"),
+                timestamp
         );
         mappedEntity.setCurrency("GBP");
         mappedEntity.setTransactionTimestamp(timestamp);
@@ -126,7 +128,8 @@ class TransactionServiceTest {
                 "STORE-1",
                 "TILL-1",
                 "cash",
-                new BigDecimal("9.99")
+                new BigDecimal("9.99"),
+                timestamp
         );
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
@@ -150,7 +153,7 @@ class TransactionServiceTest {
     @Test
     @DisplayName("Should return existing transaction when DuplicateKeyException occurs")
     void processTransaction_handlesDuplicateKeyException() {
-        ZonedDateTime timestamp = ZonedDateTime.now();
+        Instant timestamp = Instant.now();
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 null,
@@ -170,7 +173,8 @@ class TransactionServiceTest {
                 "STORE-1",
                 "TILL-1",
                 "cash",
-                new BigDecimal("9.99")
+                new BigDecimal("9.99"),
+                timestamp
         );
         mappedEntity.setCurrency("GBP");
         mappedEntity.setTransactionTimestamp(timestamp);
@@ -181,7 +185,8 @@ class TransactionServiceTest {
                 "STORE-1",
                 "TILL-1",
                 "cash",
-                new BigDecimal("9.99")
+                new BigDecimal("9.99"),
+                timestamp
         );
         existingEntity.setCurrency("GBP");
         existingEntity.setTransactionTimestamp(timestamp);
@@ -333,10 +338,11 @@ class TransactionServiceTest {
                 storeId,
                 "TILL-001",
                 "card",
-                amount
+                amount,
+                Instant.now()
         );
         entity.setCurrency("GBP");
-        entity.setTransactionTimestamp(ZonedDateTime.now());
+        entity.setTransactionTimestamp(Instant.now());
         return entity;
     }
 
@@ -347,10 +353,11 @@ class TransactionServiceTest {
                 storeId,
                 "TILL-001",
                 "card",
-                null
+                null,
+                Instant.now()
         );
         entity.setCurrency("GBP");
-        entity.setTransactionTimestamp(ZonedDateTime.now());
+        entity.setTransactionTimestamp(Instant.now());
         return entity;
     }
 

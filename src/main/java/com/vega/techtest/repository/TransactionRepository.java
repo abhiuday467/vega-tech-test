@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,8 +22,8 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     List<TransactionEntity> findByTillIdOrderByTransactionTimestampDesc(String tillId);
 
     @Query("SELECT t FROM TransactionEntity t WHERE t.transactionTimestamp BETWEEN :startDate AND :endDate ORDER BY t.transactionTimestamp DESC")
-    List<TransactionEntity> findTransactionsByDateRange(@Param("startDate") ZonedDateTime startDate,
-                                                        @Param("endDate") ZonedDateTime endDate);
+    List<TransactionEntity> findTransactionsByDateRange(@Param("startDate") Instant startDate,
+                                                        @Param("endDate") Instant endDate);
 
     @Query("SELECT t.storeId, SUM(t.totalAmount) FROM TransactionEntity t GROUP BY t.storeId")
     List<Object[]> getTotalSalesByStore();
@@ -35,5 +35,5 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     //TODO Check the Transaction pattern is in TXN-UUID
     //TODO add swagger
 
-    TransactionEntity findByStoreIdAndTillIdAndTransactionTimestamp(String storeId, String tillId,ZonedDateTime timestamp);
+    TransactionEntity findByStoreIdAndTillIdAndTransactionTimestamp(String storeId, String tillId, Instant timestamp);
 }

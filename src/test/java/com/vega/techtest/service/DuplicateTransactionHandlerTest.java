@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +35,7 @@ class DuplicateTransactionHandlerTest {
 
     @Test
     void returnsExistingTransactionWhenPayloadMatches() {
-        ZonedDateTime timestamp = ZonedDateTime.parse("2024-01-01T10:15:30Z");
+        Instant timestamp = Instant.parse("2024-01-01T10:15:30Z");
         CreateTransactionCommand command = new CreateTransactionCommand(
                 null,
                 "CUST-1",
@@ -76,7 +76,7 @@ class DuplicateTransactionHandlerTest {
 
     @Test
     void throwsWhenPayloadDoesNotMatch() {
-        ZonedDateTime timestamp = ZonedDateTime.parse("2024-01-01T10:15:30Z");
+        Instant timestamp = Instant.parse("2024-01-01T10:15:30Z");
         CreateTransactionCommand command = new CreateTransactionCommand(
                 null,
                 "CUST-1",
@@ -137,7 +137,7 @@ class DuplicateTransactionHandlerTest {
     @Test
     void throwsWhenTimestampDiffers() {
         assertMismatch("timestamp", entity -> entity.setTransactionTimestamp(
-                ZonedDateTime.parse("2024-01-01T10:15:31Z")));
+                Instant.parse("2024-01-01T10:15:31Z")));
     }
 
     @Test
@@ -166,7 +166,7 @@ class DuplicateTransactionHandlerTest {
     }
 
     private void assertMismatch(String fieldName, java.util.function.Consumer<TransactionEntity> mutator) {
-        ZonedDateTime timestamp = ZonedDateTime.parse("2024-01-01T10:15:30Z");
+        Instant timestamp = Instant.parse("2024-01-01T10:15:30Z");
         CreateTransactionCommand command = new CreateTransactionCommand(
                 null,
                 "CUST-1",
@@ -196,7 +196,7 @@ class DuplicateTransactionHandlerTest {
     }
 
     private void assertItemMismatch(String fieldName, java.util.function.Consumer<TransactionItemEntity> mutator) {
-        ZonedDateTime timestamp = ZonedDateTime.parse("2024-01-01T10:15:30Z");
+        Instant timestamp = Instant.parse("2024-01-01T10:15:30Z");
         CreateTransactionCommand command = new CreateTransactionCommand(
                 null,
                 "CUST-1",

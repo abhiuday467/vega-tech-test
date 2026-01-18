@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -112,11 +112,11 @@ public class DuplicateTransactionHandler {
         }
     }
 
-    private void addIfDifferentTimestamp(String field, ZonedDateTime sent, ZonedDateTime existing, List<String> differences) {
+    private void addIfDifferentTimestamp(String field, Instant sent, Instant existing, List<String> differences) {
         if (sent == null && existing == null) {
             return;
         }
-        if (sent == null || existing == null || !sent.toInstant().equals(existing.toInstant())) {
+        if (sent == null || existing == null || !sent.equals(existing)) {
             differences.add(String.format("%s existing=%s sent=%s", field, existing, sent));
         }
     }

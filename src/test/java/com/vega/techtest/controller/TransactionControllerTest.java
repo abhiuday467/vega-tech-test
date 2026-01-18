@@ -671,7 +671,7 @@ class TransactionControllerTest {
                     createTransactionResponse("TXN-002")
             );
 
-            when(transactionService.getTransactionsByDateRange(any(ZonedDateTime.class), any(ZonedDateTime.class)))
+            when(transactionService.getTransactionsByDateRange(any(java.time.Instant.class), any(java.time.Instant.class)))
                     .thenReturn(results);
             when(transactionRequestMapper.toResponseList(any()))
                     .thenReturn(transactions);
@@ -685,7 +685,7 @@ class TransactionControllerTest {
                     .andExpect(jsonPath("$.count").value(2))
                     .andExpect(jsonPath("$.transactions", hasSize(2)));
 
-            verify(transactionService).getTransactionsByDateRange(any(ZonedDateTime.class), any(ZonedDateTime.class));
+            verify(transactionService).getTransactionsByDateRange(any(java.time.Instant.class), any(java.time.Instant.class));
         }
 
         @Test
@@ -700,7 +700,7 @@ class TransactionControllerTest {
         @Test
         @DisplayName("Should return 500 on service exception")
         void getTransactionsByDateRange_serviceError() throws Exception {
-            when(transactionService.getTransactionsByDateRange(any(ZonedDateTime.class), any(ZonedDateTime.class)))
+            when(transactionService.getTransactionsByDateRange(any(java.time.Instant.class), any(java.time.Instant.class)))
                     .thenThrow(new TransactionRetrievalException("Failed to retrieve transactions"));
 
             mockMvc.perform(get("/api/transactions/date-range")
@@ -910,8 +910,8 @@ class TransactionControllerTest {
                 "card",
                 new BigDecimal("25.50"),
                 "GBP",
-                ZonedDateTime.now(),
-                ZonedDateTime.now(),
+                java.time.Instant.now(),
+                java.time.Instant.now(),
                 "COMPLETED",
                 null
         );

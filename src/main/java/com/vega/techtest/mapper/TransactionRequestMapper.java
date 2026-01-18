@@ -13,13 +13,14 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.List;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 @Mapper(componentModel = "spring")
 public interface TransactionRequestMapper {
 
-    @Mapping(target = "timestamp", source = "timestamp", qualifiedByName = "toUtc")
+    @Mapping(target = "timestamp", source = "timestamp", qualifiedByName = "toInstantUtc")
     CreateTransactionCommand toCommand(TransactionRequest request);
 
     TransactionItem toCommandItem(TransactionItemRequest item);
@@ -36,11 +37,19 @@ public interface TransactionRequestMapper {
 
     List<TransactionItemResponse> toItemResponseList(List<TransactionItemResult> items);
 
-    @Named("toUtc")
-    default ZonedDateTime toUtc(ZonedDateTime timestamp) {
+    @Named("toInstantUtc")
+    default Instant toInstantUtc(ZonedDateTime timestamp) {
         if (timestamp == null) {
             return null;
         }
-        return timestamp.withZoneSameInstant(ZoneOffset.UTC);
+        return timestamp.toInstant();
+    }
+
+    @Named("toUtc")
+    default ZonedDateTime toUtc(Instant timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        return ZonedDateTime.ofInstant(timestamp, ZoneOffset.UTC);
     }
 }

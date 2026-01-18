@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -426,7 +427,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -444,7 +445,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -462,7 +463,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -480,7 +481,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -500,7 +501,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -520,7 +521,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -540,7 +541,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -560,7 +561,7 @@ class TransactionValidatorTest {
                     "card",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
@@ -578,7 +579,7 @@ class TransactionValidatorTest {
                     "cheque",
                     new BigDecimal("10.00"),
                     "GBP",
-                    ZonedDateTime.now(),
+                    Instant.now(),
                     null
             );
 
