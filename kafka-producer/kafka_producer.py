@@ -72,7 +72,7 @@ class KafkaTransactionProducer:
     
     def generate_transaction_id(self) -> str:
         """Generate a unique transaction ID"""
-        return f"TXN-{uuid.uuid4().hex[:8].upper()}"
+        return f"TXN-{str(uuid.uuid4()).upper()}"
     
     def generate_timestamp(self) -> str:
         """Generate a timestamp in ISO format"""
