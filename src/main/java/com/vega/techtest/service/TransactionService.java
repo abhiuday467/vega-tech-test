@@ -1,7 +1,5 @@
 package com.vega.techtest.service;
 
-import com.vega.techtest.dto.TransactionRequest;
-import com.vega.techtest.dto.TransactionResponse;
 import com.vega.techtest.entity.TransactionEntity;
 import com.vega.techtest.entity.TransactionItemEntity;
 import com.vega.techtest.exception.ResourceNotFoundException;
@@ -22,7 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 import static com.vega.techtest.utils.Calculator.calculateAverageAmount;
 

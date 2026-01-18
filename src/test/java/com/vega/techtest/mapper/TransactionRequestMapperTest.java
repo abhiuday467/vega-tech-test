@@ -154,14 +154,14 @@ class TransactionRequestMapperTest {
         List<TransactionItemRequest> itemRequests = new ArrayList<>();
         itemRequests.add(new TransactionItemRequest("Product A", "PROD-001", new BigDecimal("50.00"), 2));
         request = new TransactionRequest(
-                request.getTransactionId(),
-                request.getCustomerId(),
-                request.getStoreId(),
-                request.getTillId(),
-                request.getPaymentMethod(),
-                request.getTotalAmount(),
-                request.getCurrency(),
-                request.getTimestamp(),
+                request.transactionId(),
+                request.customerId(),
+                request.storeId(),
+                request.tillId(),
+                request.paymentMethod(),
+                request.totalAmount(),
+                request.currency(),
+                request.timestamp(),
                 itemRequests
         );
 
@@ -214,9 +214,9 @@ class TransactionRequestMapperTest {
 
         TransactionResponse response = mapper.toResponse(result);
 
-        assertThat(response.getTransactionTimestamp().toInstant()).isEqualTo(transactionTimestamp.toInstant());
-        assertThat(response.getTransactionTimestamp().getZone()).isEqualTo(ZoneOffset.UTC);
-        assertThat(response.getCreatedAt().toInstant()).isEqualTo(createdAt.toInstant());
-        assertThat(response.getCreatedAt().getZone()).isEqualTo(ZoneOffset.UTC);
+        assertThat(response.transactionTimestamp().toInstant()).isEqualTo(transactionTimestamp.toInstant());
+        assertThat(response.transactionTimestamp().getZone()).isEqualTo(ZoneOffset.UTC);
+        assertThat(response.createdAt().toInstant()).isEqualTo(createdAt.toInstant());
+        assertThat(response.createdAt().getZone()).isEqualTo(ZoneOffset.UTC);
     }
 }

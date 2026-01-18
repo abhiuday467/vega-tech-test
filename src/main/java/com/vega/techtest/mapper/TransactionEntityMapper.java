@@ -62,7 +62,7 @@ public interface TransactionEntityMapper {
     @Deprecated
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "transaction", ignore = true)
-    @Mapping(target = "totalPrice", expression = "java(calculateTotalPrice(request.getUnitPrice(), request.getQuantity()))")
+    @Mapping(target = "totalPrice", expression = "java(calculateTotalPrice(request.unitPrice(), request.quantity()))")
     TransactionItemEntity toItemEntity(TransactionItemRequest request);
 
     @Deprecated

@@ -38,69 +38,69 @@ public class TransactionValidator {
         validateRequiredFields(request);
         validateItems(request);
 
-        if (request.getItems() != null && !request.getItems().isEmpty()) {
-            BigDecimal calculatedTotal = request.getItems().stream()
-                    .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+        if (request.items() != null && !request.items().isEmpty()) {
+            BigDecimal calculatedTotal = request.items().stream()
+                    .map(item -> item.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            if (calculatedTotal.compareTo(request.getTotalAmount()) != 0) {
+            if (calculatedTotal.compareTo(request.totalAmount()) != 0) {
                 logger.error("Calculated total ({}) doesn't match provided total ({})",
-                        calculatedTotal, request.getTotalAmount());
+                        calculatedTotal, request.totalAmount());
                 throw new ReceiptTotalMismatchException(
                         "Receipt total mismatch: calculated total does not match provided total",
                         calculatedTotal,
-                        request.getTotalAmount()
+                        request.totalAmount()
                 );
             }
         }
     }
 
     private void validateRequiredFields(TransactionRequest request) {
-        if (request.getStoreId() == null || request.getStoreId().trim().isEmpty()) {
+        if (request.storeId() == null || request.storeId().trim().isEmpty()) {
             throw new IllegalArgumentException("Store ID is required");
         }
-        if (request.getTillId() == null || request.getTillId().trim().isEmpty()) {
+        if (request.tillId() == null || request.tillId().trim().isEmpty()) {
             throw new IllegalArgumentException("Till ID is required");
         }
-        if (request.getPaymentMethod() == null || request.getPaymentMethod().trim().isEmpty()) {
+        if (request.paymentMethod() == null || request.paymentMethod().trim().isEmpty()) {
             throw new IllegalArgumentException("Payment method is required");
         }
-        if (request.getTotalAmount() == null) {
+        if (request.totalAmount() == null) {
             throw new IllegalArgumentException("Total amount is required");
         }
-        if (request.getTotalAmount().compareTo(new BigDecimal("0.01")) < 0) {
+        if (request.totalAmount().compareTo(new BigDecimal("0.01")) < 0) {
             throw new IllegalArgumentException("Total amount must be greater than zero");
         }
-        if (request.getTimestamp() == null) {
+        if (request.timestamp() == null) {
             throw new IllegalArgumentException("Transaction creation time is required");
         }
     }
 
     private void validateItems(TransactionRequest request) {
-        if (request.getItems() == null || request.getItems().isEmpty()) {
+        if (request.items() == null || request.items().isEmpty()) {
             return;
         }
 
-        for (int i = 0; i < request.getItems().size(); i++) {
-            var item = request.getItems().get(i);
+        for (int i = 0; i < request.items().size(); i++) {
+            var item = request.items().get(i);
 
             if (item == null) {
                 throw new IllegalArgumentException("Item at index " + i + " cannot be null");
             }
 
-            if (item.getUnitPrice() == null) {
+            if (item.unitPrice() == null) {
                 throw new IllegalArgumentException("Item at index " + i + ": Unit price is required");
             }
 
-            if (item.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
+            if (item.unitPrice().compareTo(BigDecimal.ZERO) < 0) {
                 throw new IllegalArgumentException("Item at index " + i + ": Unit price cannot be negative");
             }
 
-            if (item.getQuantity() == null) {
+            if (item.quantity() == null) {
                 throw new IllegalArgumentException("Item at index " + i + ": Quantity is required");
             }
 
-            if (item.getQuantity() <= 0) {
+            if (item.quantity() <= 0) {
                 throw new IllegalArgumentException("Item at index " + i + ": Quantity must be greater than zero");
             }
         }

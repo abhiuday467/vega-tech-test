@@ -46,39 +46,39 @@ public class TransactionMetricsService {
         try {
             transactionSubmissionCounter.increment();
 
-            if (response.getTotalAmount() != null) {
-                transactionAmountSummary.record(response.getTotalAmount().doubleValue());
+            if (response.totalAmount() != null) {
+                transactionAmountSummary.record(response.totalAmount().doubleValue());
             }
 
-            if (response.getItems() != null) {
-                transactionItemCountSummary.record(response.getItems().size());
+            if (response.items() != null) {
+                transactionItemCountSummary.record(response.items().size());
             }
 
-            if (request.getStoreId() != null) {
+            if (request.storeId() != null) {
                 Counter.builder("transaction_submissions_by_store")
-                        .tag("store_id", request.getStoreId())
+                        .tag("store_id", request.storeId())
                         .description("Transaction submissions by store")
                         .register(meterRegistry)
                         .increment();
             }
 
-            if (request.getTillId() != null) {
+            if (request.tillId() != null) {
                 Counter.builder("transaction_submissions_by_till")
-                        .tag("till_id", request.getTillId())
+                        .tag("till_id", request.tillId())
                         .description("Transaction submissions by till")
                         .register(meterRegistry)
                         .increment();
             }
 
-            if (request.getPaymentMethod() != null) {
+            if (request.paymentMethod() != null) {
                 Counter.builder("transaction_submissions_by_payment_method")
-                        .tag("payment_method", request.getPaymentMethod())
+                        .tag("payment_method", request.paymentMethod())
                         .description("Transaction submissions by payment method")
                         .register(meterRegistry)
                         .increment();
             }
 
-            logger.debug("Recorded metrics for transaction: {}", response.getTransactionId());
+            logger.debug("Recorded metrics for transaction: {}", response.transactionId());
         } catch (Exception e) {
             logger.warn("Failed to record transaction submission metrics: {}", e.getMessage());
         }

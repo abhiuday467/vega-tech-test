@@ -36,7 +36,7 @@ public class TransactionController {
     @Timed("transaction_submission_duration")
     @PostMapping("/submit")
     public ResponseEntity<Map<String, Object>> submitTransaction(@Valid @RequestBody TransactionRequest request) {
-        logger.info("Received transaction submission from till: {}", request.getTillId());
+        logger.info("Received transaction submission from till: {}", request.tillId());
 
         CreateTransactionCommand command = transactionRequestMapper.toCommand(request);
         TransactionResult result = transactionService.processTransaction(command);
@@ -49,8 +49,8 @@ public class TransactionController {
         return ResponseEntity.ok(Map.of(
                 "status", "success",
                 "message", "Transaction processed successfully",
-                "transactionId", response.getTransactionId(),
-                "timestamp", response.getTransactionTimestamp()
+                "transactionId", response.transactionId(),
+                "timestamp", response.transactionTimestamp()
         ));
     }
 
