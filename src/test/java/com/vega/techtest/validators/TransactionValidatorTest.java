@@ -138,6 +138,22 @@ class TransactionValidatorTest {
     }
 
     @Test
+    @DisplayName("Should throw exception when paymentMethod is invalid")
+    void validateTransactionRequest_invalidPaymentMethod() {
+        TransactionRequest request = buildRequest(
+                "STORE-001",
+                "TILL-001",
+                "cheque",
+                new BigDecimal("10.00"),
+                ZonedDateTime.now(),
+                null
+        );
+
+        assertThatThrownBy(() -> validator.validateTransactionRequest(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Payment method must be 'cash' or 'card'");
+    }
+    @Test
     @DisplayName("Should throw exception when totalAmount is null")
     void validateTransactionRequest_nullTotalAmount() {
         TransactionRequest request = buildRequest(
@@ -549,6 +565,26 @@ class TransactionValidatorTest {
             );
 
             assertDoesNotThrow(() -> validator.validateTransactionCommand(command));
+        }
+
+        @Test
+        @DisplayName("Should throw exception when paymentMethod is invalid")
+        void validateTransactionCommand_invalidPaymentMethod() {
+            CreateTransactionCommand command = new CreateTransactionCommand(
+                    "TXN-" + UUID.randomUUID(),
+                    "CUST-001",
+                    "STORE-001",
+                    "TILL-001",
+                    "cheque",
+                    new BigDecimal("10.00"),
+                    "GBP",
+                    ZonedDateTime.now(),
+                    null
+            );
+
+            assertThatThrownBy(() -> validator.validateTransactionCommand(command))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Payment method must be 'cash' or 'card'");
         }
     }
 }

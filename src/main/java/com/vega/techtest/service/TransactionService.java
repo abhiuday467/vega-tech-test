@@ -45,7 +45,7 @@ public class TransactionService {
             return createTransaction(command);
         } catch (DataIntegrityViolationException e) {
            return duplicateTransactionHandler.findExistingTransaction(command);
-        } catch(ReceiptTotalMismatchException | IllegalStateException e){
+        } catch(ReceiptTotalMismatchException | IllegalStateException | IllegalArgumentException e ){
             throw e;
         } catch (Exception e) {
             throw new TransactionProcessingException("Failed to process transaction", e);

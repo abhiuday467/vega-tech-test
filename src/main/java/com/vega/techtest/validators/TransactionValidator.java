@@ -2,6 +2,7 @@ package com.vega.techtest.validators;
 
 import com.vega.techtest.dto.TransactionRequest;
 import com.vega.techtest.exception.ReceiptTotalMismatchException;
+import com.vega.techtest.service.PaymentMethod;
 import com.vega.techtest.service.command.CreateTransactionCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +66,7 @@ public class TransactionValidator {
         if (request.paymentMethod() == null || request.paymentMethod().trim().isEmpty()) {
             throw new IllegalArgumentException("Payment method is required");
         }
+        PaymentMethod.fromString(request.paymentMethod());
         if (request.totalAmount() == null) {
             throw new IllegalArgumentException("Total amount is required");
         }
@@ -119,6 +121,7 @@ public class TransactionValidator {
         if (command.paymentMethod() == null || command.paymentMethod().trim().isEmpty()) {
             throw new IllegalArgumentException("Payment method is required");
         }
+        PaymentMethod.fromString(command.paymentMethod());
         if (command.totalAmount() == null) {
             throw new IllegalArgumentException("Total amount is required");
         }
