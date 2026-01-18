@@ -65,7 +65,7 @@ class TillSimulator:
     
     def generate_transaction_id(self) -> str:
         """Generate a unique transaction ID"""
-        return f"TXN-{uuid.uuid4().hex[:8].upper()}"
+        return f"TXN-{str(uuid.uuid4()).upper()}"
     
     def generate_random_items(self, min_items: int = 1, max_items: int = 8) -> List[Dict[str, Any]]:
         """Generate random items for a transaction"""
@@ -141,37 +141,37 @@ class TillSimulator:
             {
                 "name": "Invalid status",
                 "status_code": 200,
-                "response_body": {"status": "ok", "message": "Transaction processed successfully", "transactionId": "TXN-TEST001", "timestamp": "2024-01-01T00:00:00Z"},
+                "response_body": {"status": "ok", "message": "Transaction processed successfully", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": "2024-01-01T00:00:00Z"},
                 "should_fail": True
             },
             {
                 "name": "Empty message",
                 "status_code": 200,
-                "response_body": {"status": "success", "message": "", "transactionId": "TXN-TEST001", "timestamp": "2024-01-01T00:00:00Z"},
+                "response_body": {"status": "success", "message": "", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": "2024-01-01T00:00:00Z"},
                 "should_fail": True
             },
             {
                 "name": "Message without success",
                 "status_code": 200,
-                "response_body": {"status": "success", "message": "Transaction completed", "transactionId": "TXN-TEST001", "timestamp": "2024-01-01T00:00:00Z"},
+                "response_body": {"status": "success", "message": "Transaction completed", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": "2024-01-01T00:00:00Z"},
                 "should_fail": True
             },
             {
                 "name": "Invalid timestamp format",
                 "status_code": 200,
-                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": "TXN-TEST001", "timestamp": "invalid-date"},
+                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": "invalid-date"},
                 "should_fail": True
             },
             {
                 "name": "Future timestamp",
                 "status_code": 200,
-                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": "TXN-TEST001", "timestamp": "2030-01-01T00:00:00Z"},
+                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": "2030-01-01T00:00:00Z"},
                 "should_fail": True
             },
             {
                 "name": "Extra fields",
                 "status_code": 200,
-                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": "TXN-TEST001", "timestamp": "2024-01-01T00:00:00Z", "extra": "field"},
+                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": "2024-01-01T00:00:00Z", "extra": "field"},
                 "should_fail": True
             },
             {
@@ -183,7 +183,7 @@ class TillSimulator:
             {
                 "name": "Valid response",
                 "status_code": 200,
-                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": "TXN-TEST001", "timestamp": datetime.now(timezone.utc).isoformat()},
+                "response_body": {"status": "success", "message": "Transaction processed successfully", "transactionId": f"TXN-{str(uuid.uuid4()).upper()}", "timestamp": datetime.now(timezone.utc).isoformat()},
                 "should_fail": False
             }
         ]
@@ -257,10 +257,10 @@ class TillSimulator:
         try:
             url = f"{self.api_base_url}/api/transactions/submit"
             headers = {"Content-Type": "application/json"}
-            
+
             # Test 1: Missing required fields
             malformed_transaction = {
-                "transactionId": "TXN-TEST002",
+                "transactionId": f"TXN-{str(uuid.uuid4()).upper()}",
                 "customerId": "CUST-12345"
                 # Missing other required fields
             }
@@ -299,8 +299,9 @@ class TillSimulator:
         """Test the submit endpoint to ensure it's working correctly"""
         try:
             # Create a simple test transaction
+            test_transaction_id = f"TXN-{str(uuid.uuid4()).upper()}"
             test_transaction = {
-                "transactionId": "TXN-TEST001",
+                "transactionId": test_transaction_id,
                 "customerId": "CUST-12345",
                 "storeId": "STORE-001",
                 "tillId": "TILL-1",
@@ -318,33 +319,33 @@ class TillSimulator:
                     }
                 ]
             }
-            
+
             url = f"{self.api_base_url}/api/transactions/submit"
             headers = {"Content-Type": "application/json"}
-            
+
             response = self.session.post(url, json=test_transaction, headers=headers, timeout=10)
-            
+
             if response.status_code == 200:
                 try:
                     result = response.json()
-                    
+
                     # Validate response structure
                     required_fields = ["status", "message", "transactionId", "timestamp"]
                     missing_fields = [field for field in required_fields if field not in result]
-                    
+
                     if missing_fields:
                         logger.error(f"Submit endpoint test failed - missing fields: {missing_fields}")
                         logger.error(f"Response: {result}")
                         return False
-                    
+
                     if result["status"] != "success":
                         logger.error(f"Submit endpoint test failed - status: {result['status']}")
                         return False
-                    
-                    if result["transactionId"] != "TXN-TEST001":
+
+                    if result["transactionId"] != test_transaction_id:
                         logger.error(f"Submit endpoint test failed - transaction ID mismatch: {result['transactionId']}")
                         return False
-                    
+
                     logger.info("Submit endpoint test passed")
                     return True
                     
