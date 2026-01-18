@@ -1,7 +1,7 @@
 package com.vega.techtest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vega.techtest.dto.KafkaTransactionEvent;
+import com.vega.techtest.adapter.in.messaging.kafka.dto.KafkaTransactionEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

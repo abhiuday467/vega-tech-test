@@ -1,15 +1,15 @@
 package com.vega.techtest.mapper;
 
-import com.vega.techtest.dto.TransactionItemRequest;
-import com.vega.techtest.dto.TransactionItemResponse;
-import com.vega.techtest.dto.TransactionRequest;
-import com.vega.techtest.dto.TransactionResponse;
-import com.vega.techtest.entity.TransactionEntity;
-import com.vega.techtest.entity.TransactionItemEntity;
-import com.vega.techtest.service.command.CreateTransactionCommand;
-import com.vega.techtest.service.command.TransactionItem;
-import com.vega.techtest.service.command.TransactionItemResult;
-import com.vega.techtest.service.command.TransactionResult;
+import com.vega.techtest.adapter.in.rest.dto.TransactionItemRequest;
+import com.vega.techtest.adapter.in.rest.dto.TransactionItemResponse;
+import com.vega.techtest.adapter.in.rest.dto.TransactionRequest;
+import com.vega.techtest.adapter.in.rest.dto.TransactionResponse;
+import com.vega.techtest.adapter.out.persistence.entity.TransactionEntity;
+import com.vega.techtest.adapter.out.persistence.entity.TransactionItemEntity;
+import com.vega.techtest.application.transaction.command.CreateTransactionCommand;
+import com.vega.techtest.domain.transaction.model.TransactionItem;
+import com.vega.techtest.application.transaction.command.TransactionItemResult;
+import com.vega.techtest.application.transaction.command.TransactionResult;
 import org.mapstruct.*;
 
 import java.math.BigDecimal;
