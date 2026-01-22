@@ -7,7 +7,155 @@
     "tech-test"
   ],
   "timezone": "browser",
-  "panels": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "JVM Memory Used (Heap vs Non-Heap)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (area) (jvm_memory_used_bytes{job=\"tech-test-app\",area=~\"heap|nonheap\"})",
+          "legendFormat": "{{area}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "JVM GC Pause Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"tech-test-app\"}[5m])",
+          "legendFormat": "GC Pause Seconds/sec"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "s",
+          "decimals": 3
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "process_cpu_usage{job=\"tech-test-app\"} * 100",
+          "legendFormat": "Process CPU %"
+        },
+        {
+          "expr": "system_cpu_usage{job=\"tech-test-app\"} * 100",
+          "legendFormat": "System CPU %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent",
+          "decimals": 2
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 4,
+      "title": "Live Threads",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"tech-test-app\"}",
+          "legendFormat": "Live Threads"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "id": 5,
+      "title": "HikariCP Connections",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"active\"}",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"idle\"}",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"pending\"}",
+          "legendFormat": "Pending"
+        },
+        {
+          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"max\"}",
+          "legendFormat": "Max"
+        },
+        {
+          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"min\"}",
+          "legendFormat": "Min"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    }
+  ],
   "time": {
     "from": "now-1h",
     "to": "now"

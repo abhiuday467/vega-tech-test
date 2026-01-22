@@ -357,6 +357,185 @@
         "x": 0,
         "y": 24
       }
+    },
+    {
+      "id": 10,
+      "title": "Average Transaction Amount",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(transaction_amount_sum{job=\"tech-test-app\"}[5m])) / (sum(rate(transaction_amount_count{job=\"tech-test-app\"}[5m])) + 0.0001)",
+          "legendFormat": "Avg Amount"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "GBP",
+          "decimals": 2
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 32
+      }
+    },
+    {
+      "id": 11,
+      "title": "Max Transaction Amount",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "max(transaction_amount_max{job=\"tech-test-app\"})",
+          "legendFormat": "Max Amount"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "GBP",
+          "decimals": 2
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 32
+      }
+    },
+    {
+      "id": 12,
+      "title": "Average Items per Transaction",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(transaction_item_count_sum{job=\"tech-test-app\"}[5m])) / (sum(rate(transaction_item_count_count{job=\"tech-test-app\"}[5m])) + 0.0001)",
+          "legendFormat": "Avg Items"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short",
+          "decimals": 2
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 32
+      }
+    },
+    {
+      "id": 13,
+      "title": "Max Items per Transaction",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "max(transaction_item_count_max{job=\"tech-test-app\"})",
+          "legendFormat": "Max Items"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 32
+      }
+    },
+    {
+      "id": 14,
+      "title": "Submissions by Store (Top 10)",
+      "type": "barchart",
+      "targets": [
+        {
+          "expr": "topk(10, sum by (store_id) (rate(transaction_submissions_by_store{job=\"tech-test-app\"}[5m])))",
+          "legendFormat": "{{store_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      }
+    },
+    {
+      "id": 15,
+      "title": "Submissions by Till (Top 10)",
+      "type": "barchart",
+      "targets": [
+        {
+          "expr": "topk(10, sum by (till_id) (rate(transaction_submissions_by_till{job=\"tech-test-app\"}[5m])))",
+          "legendFormat": "{{till_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      }
+    },
+    {
+      "id": 16,
+      "title": "Submissions by Payment Method",
+      "type": "piechart",
+      "targets": [
+        {
+          "expr": "sum by (payment_method) (rate(transaction_submissions_by_payment_method{job=\"tech-test-app\"}[5m]))",
+          "legendFormat": "{{payment_method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      }
     }
   ],
   "time": {
