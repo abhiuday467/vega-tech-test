@@ -120,24 +120,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"active\"}",
-          "legendFormat": "Active"
-        },
-        {
-          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"idle\"}",
-          "legendFormat": "Idle"
-        },
-        {
-          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"pending\"}",
+          "expr": "hikaricp_connections_pending{job=\"tech-test-app\"}",
           "legendFormat": "Pending"
         },
         {
-          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"max\"}",
-          "legendFormat": "Max"
-        },
-        {
-          "expr": "hikaricp_connections{job=\"tech-test-app\",state=\"min\"}",
-          "legendFormat": "Min"
+          "expr": "jdbc_connections_max{job=\"tech-test-app\"}",
+          "legendFormat": "Max Connections"
         }
       ],
       "fieldConfig": {
@@ -152,6 +140,36 @@
         "h": 8,
         "w": 12,
         "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "HikariCP Connection Latency (Max)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_acquire_seconds_max{job=\"tech-test-app\"}",
+          "legendFormat": "Acquire Max"
+        },
+        {
+          "expr": "hikaricp_connections_usage_seconds_max{job=\"tech-test-app\"}",
+          "legendFormat": "Usage Max"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
         "y": 16
       }
     }
