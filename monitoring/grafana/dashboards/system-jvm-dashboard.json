@@ -1,0 +1,16 @@
+{
+  "id": null,
+  "title": "System and JVM Health Dashboard",
+  "tags": [
+    "system",
+    "jvm",
+    "tech-test"
+  ],
+  "timezone": "browser",
+  "panels": [],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s"
+}
