@@ -1,0 +1,560 @@
+openapi: 3.0.1
+info:
+  title: Transaction API
+  description: API for submitting and querying transactions.
+  contact:
+    name: Vega Tech Test
+  license:
+    name: UNLICENSED
+  version: v1
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+tags:
+- name: Actuator
+  description: Monitor and interact
+  externalDocs:
+    description: Spring Boot Actuator Web API Documentation
+    url: https://docs.spring.io/spring-boot/docs/current/actuator-api/html/
+paths:
+  /api/transactions/submit:
+    post:
+      tags:
+      - transaction-controller
+      operationId: submitTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      responses:
+        "200":
+          description: Transaction processed successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "400":
+          description: Validation error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "422":
+          description: Receipt total mismatch
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ReceiptTotalMismatchResponse'
+  /api/transactions/sample:
+    post:
+      tags:
+      - transaction-controller
+      operationId: createSampleTransaction
+      responses:
+        "200":
+          description: Sample transaction created
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/transactions/{transactionId}:
+    get:
+      tags:
+      - transaction-controller
+      operationId: getTransaction
+      parameters:
+      - name: transactionId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "404":
+          description: Transaction not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        "200":
+          description: Transaction found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/transactions/till/{tillId}:
+    get:
+      tags:
+      - transaction-controller
+      operationId: getTransactionsByTill
+      parameters:
+      - name: tillId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Transactions found
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/transactions/store/{storeId}:
+    get:
+      tags:
+      - transaction-controller
+      operationId: getTransactionsByStore
+      parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Transactions found
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/transactions/stats/{storeId}:
+    get:
+      tags:
+      - transaction-controller
+      operationId: getTransactionStats
+      parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Statistics calculated
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/transactions/health:
+    get:
+      tags:
+      - transaction-controller
+      operationId: health
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /api/transactions/date-range:
+    get:
+      tags:
+      - transaction-controller
+      operationId: getTransactionsByDateRange
+      parameters:
+      - name: startDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: endDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        "200":
+          description: Transactions found
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "400":
+          description: Invalid date range
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/transactions/customer/{customerId}:
+    get:
+      tags:
+      - transaction-controller
+      operationId: getTransactionsByCustomer
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Transactions found
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        "500":
+          description: Internal server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /actuator:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator root web endpoint
+      operationId: links
+      responses:
+        "200":
+          description: OK
+          content:
+            application/vnd.spring-boot.actuator.v3+json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    $ref: '#/components/schemas/Link'
+            application/vnd.spring-boot.actuator.v2+json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    $ref: '#/components/schemas/Link'
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    $ref: '#/components/schemas/Link'
+  /actuator/prometheus:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator web endpoint 'prometheus'
+      operationId: prometheus
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain;version=0.0.4;charset=utf-8:
+              schema:
+                type: object
+            application/openmetrics-text;version=1.0.0;charset=utf-8:
+              schema:
+                type: object
+  /actuator/metrics:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator web endpoint 'metrics'
+      operationId: metrics
+      responses:
+        "200":
+          description: OK
+          content:
+            application/vnd.spring-boot.actuator.v3+json:
+              schema:
+                type: object
+            application/vnd.spring-boot.actuator.v2+json:
+              schema:
+                type: object
+            application/json:
+              schema:
+                type: object
+  /actuator/metrics/{requiredMetricName}:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator web endpoint 'metrics-requiredMetricName'
+      operationId: metrics-requiredMetricName
+      parameters:
+      - name: requiredMetricName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/vnd.spring-boot.actuator.v3+json:
+              schema:
+                type: object
+            application/vnd.spring-boot.actuator.v2+json:
+              schema:
+                type: object
+            application/json:
+              schema:
+                type: object
+  /actuator/info:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator web endpoint 'info'
+      operationId: info
+      responses:
+        "200":
+          description: OK
+          content:
+            application/vnd.spring-boot.actuator.v3+json:
+              schema:
+                type: object
+            application/vnd.spring-boot.actuator.v2+json:
+              schema:
+                type: object
+            application/json:
+              schema:
+                type: object
+  /actuator/health:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator web endpoint 'health'
+      operationId: health
+      responses:
+        "200":
+          description: OK
+          content:
+            application/vnd.spring-boot.actuator.v3+json:
+              schema:
+                type: object
+            application/vnd.spring-boot.actuator.v2+json:
+              schema:
+                type: object
+            application/json:
+              schema:
+                type: object
+  /actuator/health/**:
+    get:
+      tags:
+      - Actuator
+      summary: Actuator web endpoint 'health-path'
+      operationId: health-path
+      responses:
+        "200":
+          description: OK
+          content:
+            application/vnd.spring-boot.actuator.v3+json:
+              schema:
+                type: object
+            application/vnd.spring-boot.actuator.v2+json:
+              schema:
+                type: object
+            application/json:
+              schema:
+                type: object
+components:
+  schemas:
+    TransactionItemRequest:
+      type: object
+      properties:
+        productName:
+          type: string
+        productCode:
+          type: string
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        category:
+          type: string
+    TransactionRequest:
+      required:
+      - paymentMethod
+      - storeId
+      - tillId
+      - timestamp
+      - totalAmount
+      type: object
+      properties:
+        transactionId:
+          type: string
+        customerId:
+          type: string
+        storeId:
+          type: string
+        tillId:
+          type: string
+        paymentMethod:
+          type: string
+        totalAmount:
+          minimum: 0.01
+          exclusiveMinimum: false
+          type: number
+        currency:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionItemRequest'
+    ValidationErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Invalid transaction data
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+            description: Field-level validation errors
+          description: Field-level validation errors
+      description: Validation error response
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Failed to process request
+        error:
+          type: string
+          example: Internal server error
+      description: Generic error response
+    ReceiptTotalMismatchResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Receipt total mismatch
+        error:
+          type: string
+          example: Totals do not match
+        calculatedTotal:
+          type: number
+          example: 7.69
+        providedTotal:
+          type: number
+          example: 7.7
+      description: Receipt total mismatch response
+    TransactionItemResponse:
+      type: object
+      properties:
+        productName:
+          type: string
+        productCode:
+          type: string
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        totalPrice:
+          type: number
+        category:
+          type: string
+    TransactionResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        customerId:
+          type: string
+        storeId:
+          type: string
+        tillId:
+          type: string
+        paymentMethod:
+          type: string
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        transactionTimestamp:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionItemResponse'
+    Link:
+      type: object
+      properties:
+        href:
+          type: string
+        templated:
+          type: boolean

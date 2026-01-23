@@ -59,6 +59,8 @@ could benefit from improvements and refactoring.
 docker-compose up -d
 ```
 
+This launches the supporting services (Postgres, Kafka, Grafana/Prometheus). The application itself runs locally via Gradle.
+
 ### Start Application
 
 ```bash
@@ -80,6 +82,22 @@ curl http://localhost:8080/api/transactions/health
 ```
 
 **That's it!** You now have a working system with sample data pre-populated to build upon.
+
+## 🔍 Swagger / OpenAPI
+
+- Swagger UI: `http://localhost:8080/swagger-ui`
+- OpenAPI spec file: `openapi.yaml`
+
+### View OpenAPI via Swagger UI (Docker)
+
+```bash
+docker run -p 8082:8080 \
+  -e SWAGGER_JSON=/app/openapi.yaml \
+  -v "$(pwd)/openapi.yaml:/app/openapi.yaml" \
+  swaggerapi/swagger-ui
+```
+
+Then open `http://localhost:8082`.
 
 ## 📚 Additional Documentation
 

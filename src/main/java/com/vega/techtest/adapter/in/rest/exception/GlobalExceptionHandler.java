@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -114,6 +115,19 @@ public class GlobalExceptionHandler {
                 "status", "error",
                 "message", "Invalid request parameter",
                 "error", "Invalid parameter value"
+        ));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, WebRequest request) {
+        logger.warn("Method not allowed: {}", ex.getMessage());
+        transactionErrorCounter.increment();
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(Map.of(
+                "status", "error",
+                "message", "Method not allowed",
+                "error", ex.getMessage()
         ));
     }
 
